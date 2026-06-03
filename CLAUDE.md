@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git Workflow
+
+Commit and push after every meaningful change — don't batch work into one large commit. Each commit should capture a working, stable state so any version can be restored.
+
+- Stage specific files, never `git add -A` blindly
+- Commit messages: short imperative subject line describing *why*, not just *what*
+- Push to `origin/master` after every commit: `git push`
+- Remote: https://github.com/leif-r-s/tictactoe
+
 ## Project Overview
 
 This repository contains a single-file Tic Tac Toe game: `tictactoe.html`. It is a self-contained browser application with no build system, dependencies, or package manager.
