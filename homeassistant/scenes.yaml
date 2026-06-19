@@ -1,0 +1,98 @@
+- id: '1686489653450'
+  name: Framsidan lights on
+  entities:
+    light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_2:
+      min_color_temp_kelvin: 2202
+      max_color_temp_kelvin: 4000
+      min_mireds: 250
+      max_mireds: 454
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 254
+      color_temp_kelvin: 2702
+      color_temp: 370
+      hs_color:
+      - 28.391
+      - 65.659
+      rgb_color:
+      - 255
+      - 167
+      - 88
+      xy_color:
+      - 0.524
+      - 0.388
+      off_with_transition: false
+      off_brightness:
+      friendly_name: lampa framsidan
+      supported_features: 40
+      state: 'on'
+    light.cykelforrad:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 204
+      color_temp_kelvin: 2604
+      color_temp: 384
+      hs_color:
+      - 28.614
+      - 68.881
+      rgb_color:
+      - 255
+      - 163
+      - 79
+      xy_color:
+      - 0.536
+      - 0.389
+      off_with_transition: false
+      off_brightness:
+      friendly_name: Cykelförråd
+      supported_features: 40
+      state: 'on'
+  metadata: {}
+- id: '1745902566621'
+  name: 'Framsidan lights off '
+  entities:
+    light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_2:
+      min_color_temp_kelvin: 2202
+      max_color_temp_kelvin: 4000
+      min_mireds: 250
+      max_mireds: 454
+      supported_color_modes:
+      - color_temp
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      off_with_transition: false
+      off_brightness: 254
+      friendly_name: lampa framsidan
+      supported_features: 40
+      state: 'off'
+    light.cykelforrad:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      supported_color_modes:
+      - color_temp
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      off_with_transition: false
+      off_brightness: 204
+      friendly_name: Cykelförråd
+      supported_features: 40
+      state: 'off'
+  metadata: {}

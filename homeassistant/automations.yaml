@@ -1,0 +1,205 @@
+- id: '1684337204221'
+  alias: Motion-activated Light
+  description: ''
+  use_blueprint:
+    path: homeassistant/motion_light.yaml
+    input:
+      motion_entity: binary_sensor.ikea_of_sweden_tradfri_motion_sensor_motion
+      light_target:
+        device_id: 130531141404146f5a46d9db66ac6ae5
+- id: '1684341681408'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 90c1e6a786be2c290c21ac5cb7111bab
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_3
+- id: '1684342457233'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 90c1e6a786be2c290c21ac5cb7111bab
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_2
+- id: '1684342889089'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 90c1e6a786be2c290c21ac5cb7111bab
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light
+- id: '1684352412701'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: b265c8e070e238114e5ff2d873b481ee
+      light: light.ikea_of_sweden_floalt_panel_ws_60x60_light
+- id: '1684412229561'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: b534434e13fdb98f9f8ee89d12c5b6ad
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light_3
+- id: '1684412299942'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: b534434e13fdb98f9f8ee89d12c5b6ad
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light_2
+- id: '1684412320811'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: b534434e13fdb98f9f8ee89d12c5b6ad
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light
+- id: '1684414179028'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 3e8d173b20465b98e1ada5ec89d3b1de
+      light: light.ikea_of_sweden_floalt_panel_ws_30x90_light
+- id: '1684432116409'
+  alias: Controller - IKEA E2001/E2002 STYRBAR Remote control
+  description: ''
+  use_blueprint:
+    path: EPMatt/ikea_e2001_e2002.yaml
+    input:
+      integration: Zigbee2MQTT
+- id: '1684432332081'
+  alias: Controller - IKEA E2001/E2002 STYRBAR Remote control
+  description: ''
+  use_blueprint:
+    path: EPMatt/ikea_e2001_e2002.yaml
+    input:
+      integration: ZHA
+      controller_device: 7a445b8c4e6ff596466423669717a330
+- id: '1684435587827'
+  alias: ZHA - IKEA TRADFRI - 5 Button Remote - Warm White Lights
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: a39bb5bd1c991924e38c89f4735f1631
+      light: light.ikea_of_sweden_gunnarp_panel_round_light_2
+- id: '1685219919125'
+  alias: New Automation
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 22318890b35751e5db8462eee05f634f
+      light: light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_3
+- id: '1685220228952'
+  alias: New Automation
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 7dc7fec5c15fda379a2f6400220a1e44
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light_3
+- id: '1685220492944'
+  alias: New Automation
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 7dc7fec5c15fda379a2f6400220a1e44
+      light: light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_3
+- id: '1685220525368'
+  alias: New Automation
+  description: ''
+  use_blueprint:
+    path: niro1987/zha_ikea_tradfri_5button_remote_white.yaml
+    input:
+      remote: 7dc7fec5c15fda379a2f6400220a1e44
+      light: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_4
+- id: '1686298469878'
+  alias: ZHA - IKEA four button remote for lights
+  description: ''
+  use_blueprint:
+    path: Malte/zha-ikea-four-button-remote-styrbar-for-lights-e2001-e2002.yaml
+    input:
+      remote: 218a8f09c3ce189980dec57acc98c089
+      light:
+        area_id: jaktrum
+        device_id:
+        - 7a445b8c4e6ff596466423669717a330
+        - edca1def560fd8b96a9552a0a194901a
+        - e3dc0397f5b3592526fca46fe367be4e
+- id: '1686489275007'
+  alias: 'Lights off at sunrise '
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunrise
+    offset: 0
+  conditions: []
+  actions:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.framsidan_lights_off
+    metadata: {}
+  mode: single
+- id: '1686489747283'
+  alias: 'Lights on at sunset '
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunset
+    offset: 0
+  conditions: []
+  actions:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.framsidan_lights_on
+    metadata: {}
+  mode: single
+- id: '1696769158051'
+  alias: Golvvärme badrum 19 grader
+  description: ''
+  triggers:
+  - trigger: calendar
+    event: start
+    offset: 0:0:0
+    entity_id: calendar.golvvarme
+  conditions: []
+  actions:
+  - data:
+      temperature: 19
+    target:
+      device_id:
+      - a66340125077aa397d70634649e23713
+      - 661d2986e8d2d01c80af7ddd65e2c1d0
+    action: climate.set_temperature
+  mode: single
+- id: '1696769552554'
+  alias: Golvvärme badrum 18 grader
+  description: ''
+  triggers:
+  - trigger: calendar
+    event: end
+    offset: 0:0:0
+    entity_id: calendar.golvvarme
+  conditions: []
+  actions:
+  - data:
+      temperature: 18
+    target:
+      device_id:
+      - a66340125077aa397d70634649e23713
+      - 661d2986e8d2d01c80af7ddd65e2c1d0
+    action: climate.set_temperature
+  mode: single

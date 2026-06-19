@@ -1,0 +1,107 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+zha:
+  zigpy_config:
+    ota:
+      otau_directory: /root/config/zigpy_ota.ota
+      extra_providers:
+        - type: ikea
+        - type: thirdreality
+
+# In order to get NordPool prices per hour
+template:
+  - trigger:
+      - trigger: time_pattern
+        minutes: "1"
+      - trigger: homeassistant
+        event: start
+    action:
+      - action: nordpool.get_prices_for_date
+        data:
+          config_entry: 01K7J1JSW1TD067ZD316Z6AGW8
+          date: "{{ now().date() }}"
+          areas: SE3
+          currency: SEK
+        response_variable: today_price
+      - action: nordpool.get_prices_for_date
+        data:
+          config_entry: 01K7J1JSW1TD067ZD316Z6AGW8
+          date: "{{ now().date() + timedelta(days=1) }}"
+          areas: SE3
+          currency: SEK
+        response_variable: tomorrow_price
+    sensor:
+      - name: Nord Pool SE3 Prices
+        unique_id: nordpool_se3_prices
+        icon: mdi:cash
+        state: >
+          {% if today_price is mapping %}
+            {% set data = namespace(prices=[]) %}
+            {% for state in today_price['SE3'] %}
+              {% set data.prices = data.prices + [((state.price/1000)) | round(3, default=0)] %}
+            {% endfor %}
+            {{min(data.prices)}}
+          {% else %}
+            unavailable
+          {% endif %}
+        attributes:
+          data: >
+            {% if today_price is mapping %}
+              {% set data = namespace(prices=[]) %}
+              {% for state in today_price['SE3'] %}
+                {% set data.prices = data.prices + [{'start':state.start, 'end':state.end, 'price': ((state.price/1000)) | round(3, default=0)}] %}
+              {% endfor %}
+              {% if tomorrow_price is mapping %}
+                {% for state in tomorrow_price['SE3'] %}
+                  {% set data.prices = data.prices + [{'start':state.start, 'end':state.end, 'price': ((state.price/1000)) | round(3, default=0)}] %}
+                {% endfor %} 
+              {% endif %}
+              {{data.prices}}
+            {% else %}
+              []
+            {% endif %}
+      - name: Nord Pool SE3 Total Prices
+        unique_id: nordpool_se3_total_prices
+        icon: mdi:cash
+        unit_of_measurement: "SEK/kWh"
+        state: >
+          {% if today_price is mapping %}
+            {% set data = namespace(prices=[]) %}
+            {% for state in today_price['SE3'] %}
+              {% set data.prices = data.prices + [((state.price/1000)) | round(3, default=0)] %}
+            {% endfor %}
+            {{min(data.prices)}}
+          {% else %}
+            unavailable
+          {% endif %}
+        attributes:
+          data: >
+            {% set add_cost = states('input_number.electricity_additional_costs') | float(0) %}
+            {% if today_price is mapping %}
+              {% set data = namespace(prices=[]) %}
+              {% for state in today_price['SE3'] %}
+                {% set data.prices = data.prices + [{'start':state.start, 'end':state.end, 'price': (((state.price/1000) + add_cost) * 1.25) | round(3, default=0)}] %}
+              {% endfor %}
+              {% if tomorrow_price is mapping %}
+                {% for state in tomorrow_price['SE3'] %}
+                  {% set data.prices = data.prices + [{'start':state.start, 'end':state.end, 'price': (((state.price/1000) + add_cost) * 1.25) | round(3, default=0)}] %}
+                {% endfor %} 
+              {% endif %}
+              {{data.prices}}
+            {% else %}
+              []
+            {% endif %}
