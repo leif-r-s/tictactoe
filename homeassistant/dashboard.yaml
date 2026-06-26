@@ -2194,11 +2194,9 @@ views:
   - title: Effektflöde
     path: effektflode
     icon: mdi:transit-connection-variant
-    type: sections
-    max_columns: 2
-    sections:
-      # ── POWER SOURCES (STACKED) ──
-      - type: grid
+    type: panel
+    cards:
+      - type: vertical-stack
         cards:
           - type: custom:mushroom-title-card
             title: Effektkällor
@@ -2269,24 +2267,17 @@ views:
               fill: fade
             entities:
               - entity: sensor.sigen_plant_consumed_power
-
-      # ── CURRENT POWER FLOW (SANKEY) ──
-      - type: grid
-        cards:
           - type: custom:mushroom-title-card
             title: Aktuellt effektflöde
-            subtitle: Sol/Batteri/Nät → Hem → Områden → Enheter
-          # Auto-generated from your HA areas + power sensors.
-          # If sources/units look off, tell me and I'll hand-build the nodes.
+            subtitle: Sol/Batteri/Nät → Hem → Områden → Enheter (W)
           - type: custom:sankey-chart
             title: Effektflöde
             layout: horizontal
-            height: 480
+            height: 650
             show_icons: true
             show_names: true
             show_states: true
-            unit_prefix: k
-            round: 2
+            round: 0
             min_state: 0.01
             autoconfig:
               mode: power
