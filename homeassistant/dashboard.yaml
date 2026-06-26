@@ -844,6 +844,7 @@ views:
             graph_span: 48h
             span:
               start: day
+            extend_to: false
             now:
               show: true
               label: Nu
@@ -862,6 +863,11 @@ views:
                 bar:
                   columnWidth: "75%"
                   borderRadius: 2
+              tooltip:
+                shared: true
+                intersect: false
+                x:
+                  format: "HH:mm"
               legend:
                 show: true
                 position: bottom
