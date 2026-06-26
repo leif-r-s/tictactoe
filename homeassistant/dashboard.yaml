@@ -2187,3 +2187,108 @@ views:
             volume_controls:
               - volume_buttons
               - volume_set
+
+  # ═══════════════════════════════════════════════════════════════
+  # 10 · EFFEKTFLÖDE (POWER FLOW)
+  # ═══════════════════════════════════════════════════════════════
+  - title: Effektflöde
+    path: effektflode
+    icon: mdi:transit-connection-variant
+    type: sections
+    max_columns: 2
+    sections:
+      # ── POWER SOURCES (STACKED) ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Effektkällor
+            subtitle: Sol · Nät · Batteri (kW)
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              show_states: true
+              colorize_states: true
+            graph_span: 24h
+            span:
+              start: day
+            apex_config:
+              chart:
+                height: 340
+                stacked: true
+                toolbar:
+                  show: false
+              stroke:
+                curve: smooth
+                width: 1.5
+              fill:
+                type: gradient
+                gradient:
+                  opacityFrom: 0.6
+                  opacityTo: 0.08
+              dataLabels:
+                enabled: false
+              grid:
+                borderColor: "rgba(255,255,255,0.06)"
+                strokeDashArray: 4
+              legend:
+                show: true
+                position: bottom
+                labels:
+                  colors: "#9aa0a6"
+              xaxis:
+                labels:
+                  style:
+                    colors: "#9aa0a6"
+              yaxis:
+                decimalsInFloat: 1
+                labels:
+                  style:
+                    colors: "#9aa0a6"
+            series:
+              - entity: sensor.sigen_plant_pv_power
+                name: Sol
+                type: area
+                color: "#f5a623"
+              - entity: sensor.sigen_plant_grid_active_power
+                name: Nät
+                type: area
+                color: "#42a5f5"
+              - entity: sensor.sigen_plant_battery_power_inverted
+                name: Batteri
+                type: area
+                color: "#26a69a"
+          - type: custom:mini-graph-card
+            name: Förbrukning
+            icon: mdi:home-lightning-bolt
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 3
+            smoothing: true
+            line_color: "#ffffff"
+            show:
+              fill: fade
+            entities:
+              - entity: sensor.sigen_plant_consumed_power
+
+      # ── CURRENT POWER FLOW (SANKEY) ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Aktuellt effektflöde
+            subtitle: Sol/Batteri/Nät → Hem → Områden → Enheter
+          # Auto-generated from your HA areas + power sensors.
+          # If sources/units look off, tell me and I'll hand-build the nodes.
+          - type: custom:sankey-chart
+            title: Effektflöde
+            layout: horizontal
+            height: 480
+            show_icons: true
+            show_names: true
+            show_states: true
+            unit_prefix: k
+            round: 2
+            min_state: 0.01
+            autoconfig:
+              mode: power
+              group_by_area: true
+              net_flows: true
