@@ -1390,3 +1390,770 @@ views:
               - entity: sensor.sun_next_setting
                 name: Solnedgång
                 icon: mdi:weather-sunset-down
+
+  # ═══════════════════════════════════════════════════════════════
+  # 8 · SIGENERGY (DEEP DIVE)
+  # ═══════════════════════════════════════════════════════════════
+  - title: Sigenergy
+    path: sigenergy
+    icon: mdi:solar-power-variant-outline
+    type: sections
+    max_columns: 4
+    sections:
+      # ── INVERTER ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Inverter
+            subtitle: SigenStor EC 17.0 TP
+          - type: custom:mushroom-chips-card
+            alignment: center
+            chips:
+              - type: template
+                icon: mdi:play-circle
+                icon_color: >-
+                  {% if is_state('sensor.sigen_inverter_running_state','Running') %}green{% else %}orange{% endif %}
+                content: "{{ states('sensor.sigen_inverter_running_state') }}"
+              - type: template
+                icon: mdi:flash
+                icon_color: amber
+                content: "{{ states('sensor.sigen_inverter_active_power') }} kW"
+              - type: template
+                icon: mdi:thermometer
+                icon_color: >-
+                  {% set t = states('sensor.sigen_inverter_pcs_internal_temperature')|float(0) %}{% if t > 60 %}red{% elif t > 45 %}orange{% else %}green{% endif %}
+                content: "{{ states('sensor.sigen_inverter_pcs_internal_temperature') }}°C"
+          - type: custom:mini-graph-card
+            name: Inverter aktiv effekt
+            icon: mdi:flash
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 3
+            smoothing: true
+            line_color: "#42a5f5"
+            show:
+              fill: fade
+            entities:
+              - entity: sensor.sigen_inverter_active_power
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_inverter_model_type
+                name: Modell
+                icon: mdi:information-outline
+              - entity: sensor.sigen_inverter_firmware_version
+                name: Firmware
+                icon: mdi:chip
+              - entity: sensor.sigen_inverter_running_state
+                name: Driftstatus
+                icon: mdi:play-circle
+              - entity: sensor.sigen_inverter_active_power
+                name: Aktiv effekt
+                icon: mdi:flash
+              - entity: sensor.sigen_inverter_pv_power
+                name: PV-effekt
+                icon: mdi:solar-power
+              - entity: sensor.sigen_inverter_battery_power
+                name: Batterieffekt
+                icon: mdi:battery-charging
+              - entity: sensor.sigen_inverter_total_pv_energy
+                name: Total PV-energi
+                icon: mdi:counter
+              - entity: sensor.sigen_inverter_pcs_internal_temperature
+                name: PCS intern temp
+                icon: mdi:thermometer
+              - entity: sensor.sigen_inverter_battery_average_cell_temperature
+                name: Battericell temp
+                icon: mdi:thermometer-lines
+
+      # ── PV STRINGS DETAILED ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: PV Strängar
+            subtitle: Spänning · Ström · Effekt
+          - type: custom:mini-graph-card
+            name: Strängspänning
+            icon: mdi:sine-wave
+            hours_to_show: 12
+            points_per_hour: 4
+            line_width: 2.5
+            smoothing: true
+            show:
+              legend: true
+              fill: false
+            entities:
+              - entity: sensor.sigen_inverter_pv1_voltage
+                name: PV1
+                color: "#ffd54f"
+              - entity: sensor.sigen_inverter_pv2_voltage
+                name: PV2
+                color: "#ffb300"
+              - entity: sensor.sigen_inverter_pv3_voltage
+                name: PV3
+                color: "#fb8c00"
+          - type: entities
+            title: Sträng 1
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_inverter_pv1_voltage
+                name: Spänning
+                icon: mdi:flash-triangle
+              - entity: sensor.sigen_inverter_pv1_current
+                name: Ström
+                icon: mdi:current-dc
+              - entity: sensor.sigen_inverter_pv1_power
+                name: Effekt
+                icon: mdi:solar-power
+              - entity: sensor.sigen_inverter_pv1_daily_energy
+                name: Energi idag
+              - entity: sensor.sigen_inverter_pv1_accumulated_energy
+                name: Total energi
+          - type: entities
+            title: Sträng 2
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_inverter_pv2_voltage
+                name: Spänning
+                icon: mdi:flash-triangle
+              - entity: sensor.sigen_inverter_pv2_current
+                name: Ström
+                icon: mdi:current-dc
+              - entity: sensor.sigen_inverter_pv2_power
+                name: Effekt
+                icon: mdi:solar-power
+              - entity: sensor.sigen_inverter_pv2_daily_energy
+                name: Energi idag
+              - entity: sensor.sigen_inverter_pv2_accumulated_energy
+                name: Total energi
+          - type: entities
+            title: Sträng 3
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_inverter_pv3_voltage
+                name: Spänning
+                icon: mdi:flash-triangle
+              - entity: sensor.sigen_inverter_pv3_current
+                name: Ström
+                icon: mdi:current-dc
+              - entity: sensor.sigen_inverter_pv3_power
+                name: Effekt
+                icon: mdi:solar-power
+              - entity: sensor.sigen_inverter_pv3_daily_energy
+                name: Energi idag
+              - entity: sensor.sigen_inverter_pv3_accumulated_energy
+                name: Total energi
+
+      # ── ESS / BATTERY ADVANCED ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Batteri / ESS
+            subtitle: Energilager
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: template
+                icon: mdi:battery-charging
+                icon_color: >-
+                  {% if is_state('binary_sensor.sigen_plant_battery_charging','on') %}green{% else %}grey{% endif %}
+                content: Laddar
+              - type: template
+                icon: mdi:battery-arrow-down
+                icon_color: >-
+                  {% if is_state('binary_sensor.sigen_plant_battery_discharging','on') %}orange{% else %}grey{% endif %}
+                content: Urladdar
+              - type: template
+                icon: mdi:heart-pulse
+                icon_color: pink
+                content: "SoH {{ states('sensor.sigen_plant_battery_state_of_health') }}%"
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_plant_battery_state_of_charge
+                name: Laddningsnivå
+                icon: mdi:battery-70
+              - entity: sensor.sigen_plant_rated_energy_capacity
+                name: Kapacitet
+                icon: mdi:battery-high
+              - entity: sensor.sigen_battery_estimated_energy
+                name: Uppskattad energi
+                icon: mdi:battery-charging-medium
+              - entity: sensor.sigen_plant_ess_rated_charging_power
+                name: Märkladdningseffekt
+                icon: mdi:battery-plus
+              - entity: sensor.sigen_plant_ess_rated_discharging_power
+                name: Märkurladdningseffekt
+                icon: mdi:battery-minus
+              - entity: sensor.sigen_plant_ess_average_cell_temperature
+                name: Celltemperatur
+                icon: mdi:thermometer
+              - type: divider
+              - entity: sensor.sigen_plant_total_charged_energy_of_the_ess
+                name: Totalt laddat
+                icon: mdi:battery-plus-variant
+              - entity: sensor.sigen_plant_total_discharged_energy_of_the_ess
+                name: Totalt urladdat
+                icon: mdi:battery-minus-variant
+              - entity: sensor.sigen_plant_daily_battery_charge_energy
+                name: Laddat idag
+              - entity: sensor.sigen_plant_daily_battery_discharge_energy
+                name: Urladdat idag
+
+      # ── GRID DETAIL ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Nät
+            subtitle: Anslutning & flöde
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: template
+                icon: mdi:transmission-tower
+                icon_color: >-
+                  {% if is_state('sensor.sigen_plant_grid_connection_status','On Grid') %}green{% else %}red{% endif %}
+                content: "{{ states('sensor.sigen_plant_grid_connection_status') }}"
+          - type: custom:mini-graph-card
+            name: Näteffekt
+            icon: mdi:transmission-tower
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 3
+            smoothing: true
+            line_color: "#1e88e5"
+            show:
+              fill: fade
+            entities:
+              - entity: sensor.sigen_plant_grid_active_power
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_plant_grid_active_power
+                name: Aktiv effekt
+              - entity: sensor.sigen_plant_grid_import_power
+                name: Importeffekt
+                icon: mdi:transmission-tower-import
+              - entity: sensor.sigen_plant_grid_export_power
+                name: Exporteffekt
+                icon: mdi:transmission-tower-export
+              - entity: sensor.energy_grid_sigen_plant_grid_import_power_sigen_plant_grid_export_power_net_power
+                name: Nettoeffekt
+                icon: mdi:scale-balance
+              - entity: sensor.sigen_plant_max_active_power
+                name: Max aktiv effekt
+                icon: mdi:speedometer
+              - type: divider
+              - entity: sensor.sigen_plant_daily_grid_import_energy
+                name: Import idag
+              - entity: sensor.sigen_plant_daily_grid_export_energy
+                name: Export idag
+              - entity: sensor.sigen_plant_total_imported_energy
+                name: Totalt importerat
+              - entity: sensor.sigen_plant_total_exported_energy
+                name: Totalt exporterat
+              - entity: sensor.sigen_plant_total_imported_energy_cost
+                name: Importkostnad
+                icon: mdi:cash
+              - entity: sensor.sigen_plant_daily_grid_export_energy_compensation
+                name: Exportersättning idag
+                icon: mdi:cash-plus
+
+      # ── EMS & PRODUCTION ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: EMS & Produktion
+            subtitle: Energihantering
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_plant_ems_work_mode
+                name: Arbetsläge
+                icon: mdi:cog
+              - entity: sensor.sigen_plant_plant_running_state
+                name: Anläggningsstatus
+                icon: mdi:factory
+              - entity: sensor.sigen_plant_plant_active_power
+                name: Anläggning aktiv effekt
+                icon: mdi:flash
+              - entity: sensor.sigen_plant_total_load_power
+                name: Total lasteffekt
+                icon: mdi:home-lightning-bolt
+              - entity: sensor.sigen_plant_consumed_power
+                name: Förbrukad effekt
+              - type: divider
+              - entity: sensor.sigen_plant_pv_power
+                name: PV-effekt nu
+                icon: mdi:solar-power
+              - entity: sensor.sigen_plant_pv_daily_generation
+                name: PV idag
+              - entity: sensor.sigen_plant_pv_previous_day_generation
+                name: PV igår
+              - entity: sensor.sigen_plant_total_pv_generation
+                name: PV totalt
+              - entity: sensor.sigen_plant_daily_load_consumption
+                name: Förbrukning idag
+              - entity: sensor.sigen_plant_total_load_consumption
+                name: Förbrukning totalt
+              - entity: sensor.sigen_plant_daily_third_party_inverter_energy
+                name: Tredjepartsinverter idag
+              - entity: sensor.sigen_plant_modbus_max_data_fetch_time_since_restart
+                name: Modbus max hämttid
+                icon: mdi:timer-outline
+
+      # ── ALARMS & STATUS ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Larm & Status
+            subtitle: Sigenergy diagnostik
+          - type: custom:mushroom-template-card
+            primary: Systemstatus
+            secondary: "Plant {{ states('sensor.sigen_plant_plant_running_state') }} · Inverter {{ states('sensor.sigen_inverter_running_state') }}"
+            icon: mdi:shield-check
+            icon_color: >-
+              {% if is_state('sensor.sigen_plant_plant_running_state','Running') and is_state('sensor.sigen_inverter_running_state','Running') %}green{% else %}orange{% endif %}
+          - type: entities
+            title: Plant-larm
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_plant_general_alarm_1
+                name: Larm 1
+              - entity: sensor.sigen_plant_general_alarm_2
+                name: Larm 2
+              - entity: sensor.sigen_plant_general_alarm_3
+                name: Larm 3
+              - entity: sensor.sigen_plant_general_alarm_4
+                name: Larm 4
+              - entity: sensor.sigen_plant_general_alarm_5
+                name: Larm 5
+              - entity: sensor.sigen_plant_general_alarm_6
+                name: Larm 6
+          - type: entities
+            title: Inverter-larm
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_inverter_alarm_1
+                name: Larm 1
+              - entity: sensor.sigen_inverter_alarm_2
+                name: Larm 2
+              - entity: sensor.sigen_inverter_alarm_3
+                name: Larm 3
+              - entity: sensor.sigen_inverter_alarm_4
+                name: Larm 4
+              - entity: sensor.sigen_inverter_alarm_5
+                name: Larm 5
+
+  # ═══════════════════════════════════════════════════════════════
+  # 9 · SYSTEM TOTAL (FULL READOUT)
+  # ═══════════════════════════════════════════════════════════════
+  - title: System Total
+    path: system-total
+    icon: mdi:format-list-bulleted-square
+    type: sections
+    max_columns: 4
+    sections:
+      # ── ENERGY SUMMARY ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Energi
+            subtitle: Sigenergy nyckeltal
+          - type: glance
+            columns: 2
+            show_state: true
+            entities:
+              - entity: sensor.sigen_plant_pv_power
+                name: Sol
+              - entity: sensor.sigen_plant_consumed_power
+                name: Förbrukning
+              - entity: sensor.sigen_plant_battery_power
+                name: Batteri
+              - entity: sensor.sigen_plant_grid_active_power
+                name: Nät
+              - entity: sensor.sigen_plant_battery_state_of_charge
+                name: SoC
+              - entity: sensor.sigen_plant_battery_state_of_health
+                name: SoH
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.sigen_plant_daily_pv_energy
+                name: Sol idag
+                icon: mdi:solar-power
+              - entity: sensor.sigen_plant_daily_load_consumption
+                name: Förbrukning idag
+                icon: mdi:home-lightning-bolt
+              - entity: sensor.sigen_plant_daily_grid_import_energy
+                name: Import idag
+                icon: mdi:transmission-tower-import
+              - entity: sensor.sigen_plant_daily_grid_export_energy
+                name: Export idag
+                icon: mdi:transmission-tower-export
+              - entity: sensor.sigen_plant_ems_work_mode
+                name: Arbetsläge
+                icon: mdi:cog
+              - entity: sensor.total_electricity_price
+                name: Elpris
+                icon: mdi:cash
+
+      # ── ALL POWER METERS ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Effekt just nu
+            subtitle: Alla mätare (W)
+          - type: glance
+            columns: 3
+            show_state: true
+            state_color: true
+            entities:
+              - entity: sensor.spis_och_ugn_power
+                name: Spis & ugn
+              - entity: sensor.kylskap_power_2
+                name: Kylskåp
+              - entity: sensor.frysskap_power
+                name: Frysskåp
+              - entity: sensor.diskmaskin_power
+                name: Diskmaskin
+              - entity: sensor.vinkyl_power
+                name: Vinkyl
+              - entity: sensor.flakt_kok_div_power
+                name: Fläkt kök
+              - entity: sensor.kylskap_power
+                name: Switch kök
+              - entity: sensor.tvattmaskin_power_2
+                name: Tvättmaskin
+              - entity: sensor.torktumlare_power
+                name: Torktumlare
+              - entity: sensor.tvattmaskin_power
+                name: TV
+              - entity: sensor.vvb_3fas_power
+                name: VVB
+              - entity: sensor.vvb_utedel_power
+                name: VVB utedel
+              - entity: sensor.luftvarmepump_vardagsrum_power
+                name: VP vardagsrum
+              - entity: sensor.luftvarmepump_sovrum_power
+                name: VP sovrum
+              - entity: sensor.golvvarme_ov_power
+                name: Golvv. ÖV
+              - entity: sensor.namron_bv_power
+                name: Golvv. BV
+              - entity: sensor.leifs_rum_power
+                name: Leifs rum
+              - entity: sensor.shellyplugsg3_d0cf13c9b448_power
+                name: Jespers rum
+              - entity: sensor.jakt_rummet_power
+                name: Jaktrummet
+              - entity: sensor.uttag_hall_power
+                name: Uttag hall
+              - entity: sensor.uttag_soffa_power
+                name: Uttag soffa
+              - entity: sensor.portabel_ac_power
+                name: Portabel AC
+              - entity: sensor.akustikpanel_power
+                name: Akustikpanel
+              - entity: sensor.lumi_lumi_plug_maeu01_active_power
+                name: Lumi plug
+              - entity: sensor.proxmox_power
+                name: Proxmox
+              - entity: sensor.proxmox_backup_power
+                name: Proxmox backup
+              - entity: sensor.rack_switch_power
+                name: Rack switch
+              - entity: sensor.fw_power
+                name: Brandvägg
+              - entity: sensor.aggregation_switch_power
+                name: Agg switch
+              - entity: sensor.raspberry_pi_power
+                name: Raspberry Pi
+
+      # ── ALL ENERGY TOTALS ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Energi totalt
+            subtitle: Ackumulerat (kWh)
+          - type: glance
+            columns: 3
+            show_state: true
+            entities:
+              - entity: sensor.spis_och_ugn_energy
+                name: Spis & ugn
+              - entity: sensor.kylskap_energy_2
+                name: Kylskåp
+              - entity: sensor.frysskap_energy
+                name: Frysskåp
+              - entity: sensor.diskmaskin_energy
+                name: Diskmaskin
+              - entity: sensor.vinkyl_energy
+                name: Vinkyl
+              - entity: sensor.flakt_kok_div_energy
+                name: Fläkt kök
+              - entity: sensor.kylskap_energy
+                name: Switch kök
+              - entity: sensor.tvattmaskin_energy_2
+                name: Tvättmaskin
+              - entity: sensor.torktumlare_energy
+                name: Torktumlare
+              - entity: sensor.tvattmaskin_energy
+                name: TV
+              - entity: sensor.vvb_3fas_energy
+                name: VVB
+              - entity: sensor.vvb_utedel_energy
+                name: VVB utedel
+              - entity: sensor.luftvarmepump_vardagsrum_energy
+                name: VP vardagsrum
+              - entity: sensor.luftvarmepump_sovrum_energy
+                name: VP sovrum
+              - entity: sensor.leifs_rum_energy
+                name: Leifs rum
+              - entity: sensor.shellyplugsg3_d0cf13c9b448_energy
+                name: Jespers rum
+              - entity: sensor.jakt_rummet_energy
+                name: Jaktrummet
+              - entity: sensor.uttag_hall_energy
+                name: Uttag hall
+              - entity: sensor.uttag_soffa_energy
+                name: Uttag soffa
+              - entity: sensor.portabel_ac_energy
+                name: Portabel AC
+              - entity: sensor.proxmox_energy
+                name: Proxmox
+              - entity: sensor.proxmox_backup_energy
+                name: Proxmox backup
+              - entity: sensor.rack_switch_energy
+                name: Rack switch
+              - entity: sensor.fw_energy
+                name: Brandvägg
+              - entity: sensor.aggregation_switch_energy
+                name: Agg switch
+              - entity: sensor.raspberry_pi_energy
+                name: Raspberry Pi
+              - entity: sensor.namron_bv_summation_delivered
+                name: Golvv. BV
+              - entity: sensor.akustikpanel_summation_delivered
+                name: Akustikpanel
+              - entity: sensor.lumi_lumi_plug_maeu01_summation_delivered
+                name: Lumi plug
+
+      # ── CLIMATE & TEMPERATURE ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Klimat & Temperatur
+            subtitle: Alla temperaturer
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: climate.termostat_badrum_ov
+                name: Termostat Badrum ÖV
+              - entity: climate.namron_as_4512738_thermostat
+                name: Termostat Badrum BV
+              - type: divider
+              - entity: sensor.temperatur_forrad_temperature
+                name: Förråd temp
+                icon: mdi:thermometer
+              - entity: sensor.temperatur_forrad_humidity
+                name: Förråd fukt
+                icon: mdi:water-percent
+              - entity: sensor.vvb_3fas_temperature
+                name: VVB temp
+                icon: mdi:water-boiler
+              - entity: sensor.spis_och_ugn_temperature
+                name: Spis/ugn temp
+                icon: mdi:stove
+              - entity: sensor.aqara_motion_and_light_sensor_p2_illuminance
+                name: Ljusnivå
+                icon: mdi:brightness-5
+              - type: divider
+              - entity: sensor.sigen_inverter_pcs_internal_temperature
+                name: Inverter PCS temp
+                icon: mdi:thermometer
+              - entity: sensor.sigen_plant_ess_average_cell_temperature
+                name: Batteri celltemp
+                icon: mdi:battery-heart-variant
+              - entity: sensor.zibbee_cordinator_slzb_06p10_zigbee_chip_temp
+                name: Zigbee SLZB-06P10 temp
+                icon: mdi:chip
+              - entity: sensor.slzb_06mg26u_zigbee_chip_temp
+                name: Zigbee MG26U temp
+                icon: mdi:chip
+              - entity: sensor.lenovo_tab_battery_temperature
+                name: Lenovo Tab temp
+                icon: mdi:tablet
+
+      # ── LIGHTS ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Belysning
+            subtitle: Alla lampor
+          - type: glance
+            columns: 3
+            show_state: true
+            state_color: true
+            entities:
+              - entity: light.ikea_of_sweden_floalt_panel_ws_60x60_light
+                name: Allrum
+              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_3
+                name: Tak 1
+              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light
+                name: Tak 2
+              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_2
+                name: Tak 3
+              - entity: light.kajplats_e27_ws_globe_1055lm
+                name: Kajplats
+              - entity: light.ikea_of_sweden_gunnarp_panel_round_light
+                name: Sovrum
+              - entity: light.ikea_of_sweden_floalt_panel_ws_30x90_light
+                name: Hall
+              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light
+                name: Säng Leif
+              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light_2
+                name: Säng Ann
+              - entity: light.ikea_of_sweden_gunnarp_panel_round_light_2
+                name: Jesper
+              - entity: light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_2
+                name: Framsidan
+              - entity: light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_3
+                name: Köksbord
+              - entity: light.ikea_of_sweden_tradfribulbgu10ws345lm_light
+                name: Jaktrum 1
+              - entity: light.ikea_of_sweden_tradfribulbgu10ws345lm_light_2
+                name: Jaktrum 2
+              - entity: light.ikea_of_sweden_tradfribulbgu10ws345lm_light_3
+                name: Jaktrum 3
+              - entity: light.cykelforrad
+                name: Cykelförråd
+              - entity: light.akustikpanel
+                name: Akustikpanel
+              - entity: light.baksidan_lampa_altan
+                name: Altan
+
+      # ── SECURITY & SENSORS ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Säkerhet & Sensorer
+            subtitle: Lås, rörelse, fukt
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: lock.dorrlas_nimly
+                name: Dörrlås
+                icon: mdi:lock
+              - entity: sensor.dorrlas_nimly_battery
+                name: Lås batteri
+                icon: mdi:battery
+              - entity: sensor.dorrlas_nimly_last_action
+                name: Senaste händelse
+              - entity: sensor.dorrlas_nimly_last_action_user
+                name: Användare
+              - type: divider
+              - entity: binary_sensor.aqara_motion_and_light_sensor_p2_occupancy
+                name: Rörelse Aqara
+                icon: mdi:motion-sensor
+              - entity: binary_sensor.fukt_sensor_forrad_flood
+                name: Fuktlarm förråd
+                icon: mdi:water-alert
+              - type: divider
+              - entity: sensor.aqara_motion_and_light_sensor_p2_battery
+                name: Aqara batteri
+              - entity: sensor.temperatur_forrad_battery
+                name: Temp-sensor batteri
+              - entity: sensor.fukt_sensor_forrad_battery
+                name: Fuktsensor batteri
+              - entity: sensor.ikea_of_sweden_tradfri_motion_sensor_battery
+                name: IKEA rörelse batteri
+
+      # ── NETWORK & INFRA ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Nätverk & System
+            subtitle: Zigbee, backup, kiosk
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: binary_sensor.zibbee_cordinator_slzb_06p10_internet
+                name: SLZB-06P10 Internet
+                icon: mdi:web
+              - entity: sensor.zibbee_cordinator_slzb_06p10_connection_mode
+                name: SLZB-06P10 Läge
+              - entity: binary_sensor.slzb_06mg26u_internet
+                name: SLZB-06MG26U Internet
+                icon: mdi:web
+              - type: divider
+              - entity: sensor.backup_backup_manager_state
+                name: Backup status
+                icon: mdi:backup-restore
+              - entity: sensor.backup_last_successful_automatic_backup
+                name: Senaste backup
+              - entity: sensor.backup_next_scheduled_automatic_backup
+                name: Nästa backup
+              - type: divider
+              - entity: sensor.lenovo_tab_battery
+                name: Lenovo Tab batteri
+                icon: mdi:tablet-dashboard
+              - entity: binary_sensor.lenovo_tab_plugged_in
+                name: Lenovo Tab laddar
+              - entity: sensor.lenovo_tab_free_memory
+                name: Lenovo Tab minne fritt
+
+      # ── MOBILE DEVICES ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Mobila enheter
+            subtitle: Batteri & status
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: person.rock
+                name: Rock
+              - type: divider
+              - entity: sensor.iphone_battery_level
+                name: iPhone batteri
+                icon: mdi:cellphone
+              - entity: sensor.iphone_battery_state
+                name: iPhone laddstatus
+              - entity: sensor.iphone_connection_type
+                name: iPhone anslutning
+              - entity: sensor.ipad_battery_level
+                name: iPad batteri
+                icon: mdi:tablet
+              - entity: sensor.pixel_9_pro_xl_battery_level
+                name: Pixel 9 batteri
+                icon: mdi:cellphone
+              - entity: sensor.pixel_9_pro_xl_battery_state
+                name: Pixel 9 laddstatus
+              - entity: sensor.pixel_10_pro_xl_battery_level
+                name: Pixel 10 batteri
+                icon: mdi:cellphone
+              - entity: sensor.pixel_10_pro_xl_battery_state
+                name: Pixel 10 laddstatus
+              - entity: sensor.anns_iphone_battery_level
+                name: Ann's iPhone batteri
+                icon: mdi:cellphone
+              - entity: sensor.anns_iphone_battery_state
+                name: Ann's iPhone laddstatus
+
+      # ── MEDIA ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Media
+            subtitle: Devialet Phantom
+          - type: custom:mushroom-media-player-card
+            entity: media_player.phantom_108_db_2
+            name: Phantom 108 dB
+            use_media_info: true
+            show_volume_level: true
+            media_controls:
+              - play_pause_stop
+              - previous
+              - next
+            volume_controls:
+              - volume_buttons
+              - volume_set
