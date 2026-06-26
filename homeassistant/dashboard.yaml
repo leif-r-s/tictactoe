@@ -486,11 +486,10 @@ views:
           - type: custom:apexcharts-card
             header:
               show: true
-              title: Pris per timme
-              show_states: false
-            graph_span: 48h
-            span:
-              start: day
+              title: Elpris senaste 36h
+              show_states: true
+              colorize_states: true
+            graph_span: 36h
             now:
               show: true
               label: Nu
@@ -505,12 +504,19 @@ views:
               grid:
                 borderColor: "rgba(255,255,255,0.06)"
                 strokeDashArray: 4
-              plotOptions:
-                bar:
-                  columnWidth: "55%"
-                  borderRadius: 3
+              stroke:
+                curve: stepline
+                width: 2
+              fill:
+                type: gradient
+                gradient:
+                  opacityFrom: 0.35
+                  opacityTo: 0.02
               legend:
-                show: false
+                show: true
+                position: bottom
+                labels:
+                  colors: "#9aa0a6"
               xaxis:
                 labels:
                   style:
@@ -521,27 +527,15 @@ views:
                   style:
                     colors: "#9aa0a6"
             series:
-              - entity: sensor.nord_pool_se3_current_price
-                name: Prognos
-                type: column
+              - entity: sensor.total_electricity_price
+                name: Totalt
+                type: area
                 color: "#ff6b35"
-                data_generator: |
-                  try {
-                    const a = entity.attributes;
-                    const arr = a.raw_today || a.prices_today || a.today_raw || [];
-                    const tm = a.raw_tomorrow || a.prices_tomorrow || a.tomorrow_raw || [];
-                    return [...arr, ...tm].map(p => {
-                      const t = p.start || p.time || p.hour || p.from;
-                      const v = (p.value !== undefined) ? p.value
-                              : (p.price !== undefined) ? p.price
-                              : p.total;
-                      return [new Date(t).getTime(), v];
-                    });
-                  } catch (e) { return []; }
+                stroke_width: 2
               - entity: sensor.nord_pool_se3_current_price
                 name: Spotpris
                 type: line
-                color: "#ffffff"
+                color: "#42a5f5"
                 stroke_width: 2
           - type: entities
             title: Priskomponenter
