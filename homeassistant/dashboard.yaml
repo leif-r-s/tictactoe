@@ -489,7 +489,7 @@ views:
               title: Elpris idag
               show_states: true
               colorize_states: true
-            graph_span: 24h
+            graph_span: 48h
             span:
               start: day
             now:
