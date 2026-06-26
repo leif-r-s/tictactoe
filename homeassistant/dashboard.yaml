@@ -1,142 +1,427 @@
-title: Energy & Home
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  HOME ENERGY DASHBOARD — Sigenergy + Nord Pool + Shelly        ║
+# ║  Requires (HACS): power-flow-card-plus, mini-graph-card,       ║
+# ║                   mushroom, apexcharts-card                     ║
+# ╚══════════════════════════════════════════════════════════════╝
+title: Hem
 views:
   # ═══════════════════════════════════════════════════════════════
-  # VIEW 1: ENERGY OVERVIEW
+  # 1 · ÖVERSIKT
+  # ═══════════════════════════════════════════════════════════════
+  - title: Översikt
+    path: oversikt
+    icon: mdi:view-dashboard
+    type: sections
+    max_columns: 4
+    sections:
+      # ── LIVE ENERGY FLOW ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Energiflöde
+            subtitle: Realtid
+
+          - type: custom:mushroom-chips-card
+            alignment: center
+            chips:
+              - type: template
+                icon: mdi:solar-power-variant
+                icon_color: amber
+                content: "{{ states('sensor.sigen_plant_pv_power') }} kW"
+                tap_action:
+                  action: more-info
+                entity: sensor.sigen_plant_pv_power
+              - type: template
+                icon: >-
+                  {% set b = states('sensor.sigen_plant_battery_state_of_charge')|float(0) %}{% if b >= 95 %}mdi:battery{% elif b >= 10 %}mdi:battery-{{ (b/10)|int*10 }}{% else %}mdi:battery-outline{% endif %}
+                icon_color: >-
+                  {% set b = states('sensor.sigen_plant_battery_state_of_charge')|float(0) %}{% if b < 15 %}red{% elif b < 40 %}orange{% else %}green{% endif %}
+                content: "{{ states('sensor.sigen_plant_battery_state_of_charge') }} %"
+                entity: sensor.sigen_plant_battery_state_of_charge
+                tap_action:
+                  action: more-info
+              - type: template
+                icon: mdi:transmission-tower
+                icon_color: >-
+                  {% if is_state('binary_sensor.sigen_plant_exporting_to_grid','on') %}green{% else %}red{% endif %}
+                content: >-
+                  {% set e = states('sensor.sigen_plant_grid_export_power')|float(0) %}{% set i = states('sensor.sigen_plant_grid_import_power')|float(0) %}{% if e > 0 %}↑ {{ e }} kW{% else %}↓ {{ i }} kW{% endif %}
+                entity: sensor.sigen_plant_grid_active_power
+                tap_action:
+                  action: more-info
+              - type: template
+                icon: mdi:home-lightning-bolt
+                icon_color: purple
+                content: "{{ states('sensor.sigen_plant_consumed_power') }} kW"
+                entity: sensor.sigen_plant_consumed_power
+                tap_action:
+                  action: more-info
+
+          # NOTE: battery uses the *inverted* power sensor so that
+          # discharging shows as flowing OUT to the home. If the dot
+          # animation runs backwards, swap to sensor.sigen_plant_battery_power
+          - type: custom:power-flow-card-plus
+            entities:
+              battery:
+                entity: sensor.sigen_plant_battery_power_inverted
+                state_of_charge: sensor.sigen_plant_battery_state_of_charge
+                color_state_of_charge_value: true
+              grid:
+                entity:
+                  consumption: sensor.sigen_plant_grid_import_power
+                  production: sensor.sigen_plant_grid_export_power
+              solar:
+                entity: sensor.sigen_plant_pv_power
+                display_zero_state: true
+              home:
+                entity: sensor.sigen_plant_consumed_power
+            clickable_entities: true
+            use_new_flow_rate_model: true
+            w_decimals: 2
+            kw_decimals: 2
+            min_flow_rate: 0.4
+            max_flow_rate: 6
+            watt_threshold: 1000
+            display_zero_lines:
+              mode: grey_out
+              transparency: 50
+
+      # ── IDAG (TODAY) ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Idag
+            subtitle: Dagens energibalans
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Sol
+                secondary: "{{ states('sensor.sigen_plant_daily_pv_energy') }} kWh"
+                icon: mdi:solar-power
+                icon_color: amber
+                tap_action:
+                  action: more-info
+                entity: sensor.sigen_plant_daily_pv_energy
+              - type: custom:mushroom-template-card
+                primary: Förbrukat
+                secondary: "{{ states('sensor.sigen_plant_daily_load_consumption') }} kWh"
+                icon: mdi:home-lightning-bolt
+                icon_color: purple
+                tap_action:
+                  action: more-info
+                entity: sensor.sigen_plant_daily_load_consumption
+              - type: custom:mushroom-template-card
+                primary: Import
+                secondary: "{{ states('sensor.sigen_plant_daily_grid_import_energy') }} kWh"
+                icon: mdi:transmission-tower-import
+                icon_color: red
+                tap_action:
+                  action: more-info
+                entity: sensor.sigen_plant_daily_grid_import_energy
+              - type: custom:mushroom-template-card
+                primary: Export
+                secondary: "{{ states('sensor.sigen_plant_daily_grid_export_energy') }} kWh"
+                icon: mdi:transmission-tower-export
+                icon_color: green
+                tap_action:
+                  action: more-info
+                entity: sensor.sigen_plant_daily_grid_export_energy
+
+          - type: custom:mini-graph-card
+            name: Solproduktion idag
+            icon: mdi:solar-power-variant
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 3
+            smoothing: true
+            line_color: "#f5a623"
+            show:
+              fill: fade
+              extrema: true
+            entities:
+              - entity: sensor.sigen_plant_pv_power
+
+          - type: custom:mini-graph-card
+            name: Elpris
+            icon: mdi:cash
+            hours_to_show: 24
+            points_per_hour: 2
+            line_width: 3
+            smoothing: true
+            line_color: "#ff6b35"
+            show:
+              fill: fade
+              extrema: true
+            entities:
+              - entity: sensor.total_electricity_price
+
+      # ── SNABBÅTGÄRDER ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Snabbåtgärder
+            subtitle: Lås, scener & nyckelfunktioner
+
+          - type: custom:mushroom-lock-card
+            entity: lock.dorrlas_nimly
+            name: Dörrlås
+            icon: mdi:lock
+
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Framsida på
+                icon: mdi:lightbulb-on
+                icon_color: amber
+                tap_action:
+                  action: call-service
+                  service: scene.turn_on
+                  data:
+                    entity_id: scene.framsidan_ligths_on
+              - type: custom:mushroom-template-card
+                primary: Framsida av
+                icon: mdi:lightbulb-off
+                icon_color: blue-grey
+                tap_action:
+                  action: call-service
+                  service: scene.turn_on
+                  data:
+                    entity_id: scene.framsidan_ligths_off
+
+          - type: custom:mushroom-person-card
+            entity: person.rock
+            primary_info: name
+            secondary_info: state
+
+  # ═══════════════════════════════════════════════════════════════
+  # 2 · ENERGI
   # ═══════════════════════════════════════════════════════════════
   - title: Energi
     path: energi
     icon: mdi:solar-power-variant
     type: sections
+    max_columns: 4
     sections:
-      # ── SOLAR + BATTERY + GRID LIVE STATUS ──
+      # ── 24H FLOW CHART ──
       - type: grid
-        title: "⚡ Energiflöde"
         cards:
+          - type: custom:mushroom-title-card
+            title: Effektflöde
+            subtitle: Senaste 24 timmarna
           - type: custom:apexcharts-card
             header:
               show: true
-              title: Solproduktion idag
               show_states: true
               colorize_states: true
             graph_span: 24h
             span:
               start: day
+            chart_type: line
+            apex_config:
+              chart:
+                height: 270
+                toolbar:
+                  show: false
+              stroke:
+                curve: smooth
+                width: 2.5
+              fill:
+                type: gradient
+                gradient:
+                  opacityFrom: 0.35
+                  opacityTo: 0.02
+              grid:
+                borderColor: "rgba(255,255,255,0.06)"
+                strokeDashArray: 4
+              dataLabels:
+                enabled: false
+              legend:
+                show: true
+                position: bottom
+                labels:
+                  colors: "#9aa0a6"
+              xaxis:
+                labels:
+                  style:
+                    colors: "#9aa0a6"
+              yaxis:
+                decimalsInFloat: 1
+                labels:
+                  style:
+                    colors: "#9aa0a6"
             series:
               - entity: sensor.sigen_plant_pv_power
                 name: Sol
                 type: area
-                color: "#FFB800"
-                stroke_width: 2
-                opacity: 0.3
-              - entity: sensor.sigen_plant_battery_power
+                color: "#f5a623"
+              - entity: sensor.sigen_plant_consumed_power
+                name: Förbrukning
+                type: line
+                color: "#7e57c2"
+              - entity: sensor.sigen_plant_battery_power_inverted
                 name: Batteri
                 type: line
-                color: "#4CAF50"
-                stroke_width: 2
+                color: "#43a047"
               - entity: sensor.sigen_plant_grid_active_power
                 name: Nät
                 type: line
-                color: "#2196F3"
-                stroke_width: 2
+                color: "#1e88e5"
 
+      # ── BATTERY ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Batteri
+            subtitle: SigenStor ESS
           - type: gauge
             entity: sensor.sigen_plant_battery_state_of_charge
-            name: Batteri
+            name: Laddningsnivå
+            unit: "%"
+            needle: true
             severity:
-              green: 50
-              yellow: 20
               red: 0
+              yellow: 20
+              green: 50
             min: 0
             max: 100
-            needle: true
-
-          - type: entities
-            title: Sigenergy Status
-            show_header_toggle: false
+          - type: custom:mini-graph-card
+            name: Batterieffekt
+            icon: mdi:battery-charging
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 3
+            smoothing: true
+            line_color: "#43a047"
+            show:
+              fill: fade
             entities:
-              - entity: sensor.sigen_plant_pv_power
-                name: "☀️ Solproduktion"
-                icon: mdi:solar-power
-              - entity: sensor.sigen_plant_battery_power
-                name: "🔋 Batterieffekt"
-                icon: mdi:battery-charging
-              - entity: sensor.sigen_plant_grid_active_power
-                name: "🔌 Näteffekt"
-                icon: mdi:transmission-tower
-              - entity: sensor.sigen_plant_consumed_power
-                name: "🏠 Förbrukning"
-                icon: mdi:home-lightning-bolt
-              - entity: sensor.sigen_plant_battery_state_of_health
-                name: "❤️ Batterihälsa"
-                icon: mdi:battery-heart-variant
-              - entity: sensor.sigen_plant_ess_average_cell_temperature
-                name: "🌡️ Celltemperatur"
+              - entity: sensor.sigen_plant_battery_power_inverted
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: template
+                icon: mdi:heart-pulse
+                icon_color: pink
+                content: "Hälsa {{ states('sensor.sigen_plant_battery_state_of_health') }}%"
+              - type: template
                 icon: mdi:thermometer
-              - entity: sensor.sigen_plant_ems_work_mode
-                name: "⚙️ Driftläge"
-                icon: mdi:cog
-
-          - type: horizontal-stack
-            cards:
-              - type: custom:mushroom-entity-card
-                entity: binary_sensor.sigen_plant_pv_generating
-                name: Sol
-                icon: mdi:white-balance-sunny
-                layout: vertical
-              - type: custom:mushroom-entity-card
-                entity: binary_sensor.sigen_plant_battery_charging
-                name: Laddar
-                icon: mdi:battery-charging
-                layout: vertical
-              - type: custom:mushroom-entity-card
-                entity: binary_sensor.sigen_plant_exporting_to_grid
-                name: Export
-                icon: mdi:transmission-tower-export
-                layout: vertical
-              - type: custom:mushroom-entity-card
-                entity: binary_sensor.sigen_plant_importing_from_grid
-                name: Import
-                icon: mdi:transmission-tower-import
-                layout: vertical
-
-      # ── DAILY ENERGY STATS ──
-      - type: grid
-        title: "📊 Daglig Statistik"
-        cards:
-          - type: statistics-graph
-            title: Solproduktion (7 dagar)
-            entities:
-              - entity: sensor.sigen_plant_daily_pv_energy
-            stat_types:
-              - sum
-            period: day
-            days_to_show: 7
-
+                icon_color: orange
+                content: "{{ states('sensor.sigen_plant_ess_average_cell_temperature') }}°C"
+              - type: template
+                icon: mdi:battery-high
+                icon_color: blue
+                content: "{{ states('sensor.sigen_plant_rated_energy_capacity') }} kWh"
           - type: entities
-            title: Dagens Energi
             show_header_toggle: false
             entities:
-              - entity: sensor.sigen_plant_daily_pv_energy
-                name: Sol genererat
-                icon: mdi:solar-power
-              - entity: sensor.sigen_plant_daily_load_consumption
-                name: Förbrukat
-                icon: mdi:home-lightning-bolt
               - entity: sensor.sigen_plant_daily_battery_charge_energy
-                name: Batteri laddat
-                icon: mdi:battery-plus
+                name: Laddat idag
+                icon: mdi:battery-plus-variant
               - entity: sensor.sigen_plant_daily_battery_discharge_energy
-                name: Batteri urladdat
-                icon: mdi:battery-minus
-              - entity: sensor.sigen_plant_daily_grid_import_energy
-                name: Importerat från nät
-                icon: mdi:transmission-tower-import
-              - entity: sensor.sigen_plant_daily_grid_export_energy
-                name: Exporterat till nät
-                icon: mdi:transmission-tower-export
+                name: Urladdat idag
+                icon: mdi:battery-minus-variant
+              - entity: sensor.sigen_battery_estimated_energy
+                name: Uppskattad energi
+                icon: mdi:battery-charging-medium
 
+      # ── PV STRINGS ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Solpaneler
+            subtitle: Effekt per sträng
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              show_states: true
+              colorize_states: true
+            graph_span: 24h
+            span:
+              start: day
+            chart_type: area
+            apex_config:
+              chart:
+                height: 240
+                stacked: true
+                toolbar:
+                  show: false
+              stroke:
+                curve: smooth
+                width: 1.5
+              fill:
+                type: gradient
+                gradient:
+                  opacityFrom: 0.5
+                  opacityTo: 0.05
+              dataLabels:
+                enabled: false
+              grid:
+                borderColor: "rgba(255,255,255,0.06)"
+                strokeDashArray: 4
+              legend:
+                show: true
+                position: bottom
+                labels:
+                  colors: "#9aa0a6"
+              xaxis:
+                labels:
+                  style:
+                    colors: "#9aa0a6"
+              yaxis:
+                decimalsInFloat: 1
+                labels:
+                  style:
+                    colors: "#9aa0a6"
+            series:
+              - entity: sensor.sigen_inverter_pv1_power
+                name: Sträng 1
+                color: "#ffd54f"
+              - entity: sensor.sigen_inverter_pv2_power
+                name: Sträng 2
+                color: "#ffb300"
+              - entity: sensor.sigen_inverter_pv3_power
+                name: Sträng 3
+                color: "#fb8c00"
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Sträng 1
+                secondary: "{{ states('sensor.sigen_inverter_pv1_daily_energy') }} kWh"
+                icon: mdi:solar-panel
+                icon_color: amber
+                entity: sensor.sigen_inverter_pv1_power
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Sträng 2
+                secondary: "{{ states('sensor.sigen_inverter_pv2_daily_energy') }} kWh"
+                icon: mdi:solar-panel
+                icon_color: amber
+                entity: sensor.sigen_inverter_pv2_power
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Sträng 3
+                secondary: "{{ states('sensor.sigen_inverter_pv3_daily_energy') }} kWh"
+                icon: mdi:solar-panel
+                icon_color: amber
+                entity: sensor.sigen_inverter_pv3_power
+                tap_action:
+                  action: more-info
+
+      # ── TOTALS ──
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Totalt
+            subtitle: Ackumulerat
           - type: entities
-            title: Totalt (sedan installation)
             show_header_toggle: false
             entities:
               - entity: sensor.sigen_plant_total_pv_generation
@@ -151,554 +436,925 @@ views:
               - entity: sensor.sigen_plant_total_exported_energy
                 name: Totalt exporterat
                 icon: mdi:transmission-tower-export
+              - type: divider
               - entity: sensor.sigen_plant_total_imported_energy_cost
                 name: Total importkostnad
-                icon: mdi:currency-usd
-
-      # ── PV STRING DETAILS ──
-      - type: grid
-        title: "🔆 Solpaneler per Sträng"
-        cards:
-          - type: entities
-            title: PV Strängar
-            show_header_toggle: false
-            entities:
-              - type: section
-                label: "Sträng 1"
-              - entity: sensor.sigen_inverter_pv1_power
-                name: Effekt
-              - entity: sensor.sigen_inverter_pv1_voltage
-                name: Spänning
-              - entity: sensor.sigen_inverter_pv1_current
-                name: Ström
-              - entity: sensor.sigen_inverter_pv1_daily_energy
-                name: Daglig energi
-              - type: section
-                label: "Sträng 2"
-              - entity: sensor.sigen_inverter_pv2_power
-                name: Effekt
-              - entity: sensor.sigen_inverter_pv2_voltage
-                name: Spänning
-              - entity: sensor.sigen_inverter_pv2_current
-                name: Ström
-              - entity: sensor.sigen_inverter_pv2_daily_energy
-                name: Daglig energi
-              - type: section
-                label: "Sträng 3"
-              - entity: sensor.sigen_inverter_pv3_power
-                name: Effekt
-              - entity: sensor.sigen_inverter_pv3_voltage
-                name: Spänning
-              - entity: sensor.sigen_inverter_pv3_current
-                name: Ström
-              - entity: sensor.sigen_inverter_pv3_daily_energy
-                name: Daglig energi
+                icon: mdi:cash-minus
+              - entity: sensor.sigen_plant_ems_work_mode
+                name: Driftläge
+                icon: mdi:cog
+              - entity: sensor.sigen_plant_plant_running_state
+                name: Anläggningsstatus
+                icon: mdi:factory
 
   # ═══════════════════════════════════════════════════════════════
-  # VIEW 2: ELPRIS
+  # 3 · ELPRIS
   # ═══════════════════════════════════════════════════════════════
   - title: Elpris
     path: elpris
-    icon: mdi:currency-usd
+    icon: mdi:cash-multiple
     type: sections
+    max_columns: 4
     sections:
       - type: grid
-        title: "💰 Elpriser SE3"
         cards:
+          - type: custom:mushroom-title-card
+            title: Elpris SE3
+            subtitle: Nord Pool spotpris
+          - type: custom:mushroom-chips-card
+            alignment: center
+            chips:
+              - type: template
+                icon: mdi:cash
+                icon_color: orange
+                content: "Nu {{ states('sensor.nord_pool_se3_current_price') }}"
+              - type: template
+                icon: mdi:arrow-down-bold
+                icon_color: green
+                content: "Lägst {{ states('sensor.nord_pool_se3_lowest_price') }}"
+              - type: template
+                icon: mdi:arrow-up-bold
+                icon_color: red
+                content: "Högst {{ states('sensor.nord_pool_se3_highest_price') }}"
+              - type: template
+                icon: mdi:clock-fast
+                icon_color: blue
+                content: "Nästa {{ states('sensor.nord_pool_se3_next_price') }}"
           - type: custom:apexcharts-card
             header:
               show: true
-              title: Elpris idag (Nord Pool SE3)
-              show_states: true
-              colorize_states: true
-            graph_span: 24h
+              title: Pris per timme
+              show_states: false
+            graph_span: 48h
             span:
               start: day
             now:
               show: true
               label: Nu
+              color: "#ffffff"
+            apex_config:
+              chart:
+                height: 280
+                toolbar:
+                  show: false
+              dataLabels:
+                enabled: false
+              grid:
+                borderColor: "rgba(255,255,255,0.06)"
+                strokeDashArray: 4
+              plotOptions:
+                bar:
+                  columnWidth: "55%"
+                  borderRadius: 3
+              legend:
+                show: false
+              xaxis:
+                labels:
+                  style:
+                    colors: "#9aa0a6"
+              yaxis:
+                decimalsInFloat: 2
+                labels:
+                  style:
+                    colors: "#9aa0a6"
             series:
               - entity: sensor.nord_pool_se3_current_price
-                name: Spotpris
+                name: Prognos
                 type: column
-                color: "#FF6B35"
-                stroke_width: 2
-                float_precision: 2
+                color: "#ff6b35"
                 data_generator: |
-                  return entity.attributes.prices.map((p) => {
-                    return [new Date(p.start).getTime(), p.price];
-                  });
-
+                  try {
+                    const a = entity.attributes;
+                    const arr = a.raw_today || a.prices_today || a.today_raw || [];
+                    const tm = a.raw_tomorrow || a.prices_tomorrow || a.tomorrow_raw || [];
+                    return [...arr, ...tm].map(p => {
+                      const t = p.start || p.time || p.hour || p.from;
+                      const v = (p.value !== undefined) ? p.value
+                              : (p.price !== undefined) ? p.price
+                              : p.total;
+                      return [new Date(t).getTime(), v];
+                    });
+                  } catch (e) { return []; }
+              - entity: sensor.nord_pool_se3_current_price
+                name: Spotpris
+                type: line
+                color: "#ffffff"
+                stroke_width: 2
           - type: entities
-            title: Prisöversikt
+            title: Priskomponenter
             show_header_toggle: false
             entities:
-              - entity: sensor.nord_pool_se3_current_price
-                name: "Nuvarande spotpris"
-                icon: mdi:cash
-              - entity: sensor.nord_pool_se3_lowest_price
-                name: "Lägsta pris idag"
-                icon: mdi:arrow-down-bold
-              - entity: sensor.nord_pool_se3_highest_price
-                name: "Högsta pris idag"
-                icon: mdi:arrow-up-bold
-              - entity: sensor.nord_pool_se3_next_price
-                name: "Nästa timmes pris"
-                icon: mdi:clock-fast
               - entity: sensor.total_electricity_price
-                name: "Totalt elpris (inkl. tillägg)"
+                name: Totalt elpris
                 icon: mdi:cash-register
+              - entity: sensor.nord_pool_se3_current_price
+                name: Spotpris (Nord Pool)
+                icon: mdi:chart-line
               - entity: sensor.vattenfall_sales
-                name: "Vattenfall försäljning"
-                icon: mdi:lightning-bolt
+                name: Vattenfall försäljning
+                icon: mdi:transmission-tower
+              - entity: input_number.electricity_additional_costs
+                name: Påslag / avgifter
+                icon: mdi:plus-box
               - entity: sensor.sigen_plant_daily_grid_export_energy_compensation
-                name: "Daglig exportersättning"
+                name: Exportersättning idag
                 icon: mdi:cash-plus
 
   # ═══════════════════════════════════════════════════════════════
-  # VIEW 3: APPARATER & FÖRBRUKNING
+  # 4 · FÖRBRUKNING
   # ═══════════════════════════════════════════════════════════════
-  - title: Apparater
-    path: apparater
+  - title: Förbrukning
+    path: forbrukning
     icon: mdi:flash
     type: sections
+    max_columns: 4
     sections:
-      # ── KÖKSUTRUSTNING ──
+      # ── KÖK ──
       - type: grid
-        title: "🍳 Kök"
         cards:
-          - type: custom:apexcharts-card
-            header:
-              show: true
-              title: Köksapparater - Effekt
-              show_states: true
-              colorize_states: true
-            graph_span: 6h
-            series:
-              - entity: sensor.spis_och_ugn_power
-                name: Spis & Ugn
-                color: "#E91E63"
-              - entity: sensor.kylskap_power_2
-                name: Kylskåp
-                color: "#2196F3"
-              - entity: sensor.frysskap_power
-                name: Frysskåp
-                color: "#00BCD4"
-              - entity: sensor.diskmaskin_power
-                name: Diskmaskin
-                color: "#4CAF50"
-              - entity: sensor.vinkyl_power
-                name: Vinkyl
-                color: "#9C27B0"
-              - entity: sensor.flakt_kok_div_power
-                name: Fläkt & div
-                color: "#FF9800"
-
-          - type: glance
-            title: Köksapparater (W)
-            show_name: true
-            show_state: true
+          - type: custom:mushroom-title-card
+            title: Kök
+            subtitle: Vitvaror & apparater
+          - type: custom:mini-graph-card
+            name: Kök
+            icon: mdi:stove
+            hours_to_show: 12
+            points_per_hour: 6
+            line_width: 2.5
+            smoothing: true
+            show:
+              fill: fade
+              legend: true
             entities:
               - entity: sensor.spis_och_ugn_power
                 name: Spis/Ugn
+                color: "#e94560"
               - entity: sensor.kylskap_power_2
-                name: Kylskåp
+                name: Kyl
+                color: "#1e88e5"
               - entity: sensor.frysskap_power
                 name: Frys
+                color: "#00bcd4"
               - entity: sensor.diskmaskin_power
                 name: Disk
+                color: "#43a047"
               - entity: sensor.vinkyl_power
                 name: Vinkyl
-              - entity: sensor.flakt_kok_div_power
-                name: Fläkt
+                color: "#9c27b0"
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Spis & Ugn
+                secondary: "{{ states('sensor.spis_och_ugn_power')|float(0)|round(0) }} W"
+                icon: mdi:stove
+                icon_color: >-
+                  {% set p = states('sensor.spis_och_ugn_power')|float(0)|abs %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: sensor.spis_och_ugn_power
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Kylskåp
+                secondary: "{{ states('sensor.kylskap_power_2')|float(0)|round(0) }} W"
+                icon: mdi:fridge
+                icon_color: >-
+                  {% set p = states('sensor.kylskap_power_2')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: sensor.kylskap_power_2
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Frysskåp
+                secondary: "{{ states('sensor.frysskap_power')|float(0)|round(0) }} W"
+                icon: mdi:fridge-outline
+                icon_color: >-
+                  {% set p = states('sensor.frysskap_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: sensor.frysskap_power
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Diskmaskin
+                secondary: "{{ states('sensor.diskmaskin_power')|float(0)|round(0) }} W"
+                icon: mdi:dishwasher
+                icon_color: >-
+                  {% set p = states('sensor.diskmaskin_power')|float(0) %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.diskmaskin
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Vinkyl
+                secondary: "{{ states('sensor.vinkyl_power')|float(0)|round(0) }} W"
+                icon: mdi:glass-wine
+                icon_color: >-
+                  {% set p = states('sensor.vinkyl_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.vinkyl
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Fläkt / div
+                secondary: "{{ states('sensor.flakt_kok_div_power')|float(0)|round(0) }} W"
+                icon: mdi:fan
+                icon_color: >-
+                  {% set p = states('sensor.flakt_kok_div_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.flakt_kok_div
+                tap_action:
+                  action: toggle
 
       # ── TVÄTT ──
       - type: grid
-        title: "👕 Tvätt"
         cards:
-          - type: glance
-            title: Tvättstuga
-            show_name: true
-            show_state: true
+          - type: custom:mushroom-title-card
+            title: Tvätt
+            subtitle: Tvättstuga
+          - type: custom:mini-graph-card
+            name: Tvätt
+            icon: mdi:washing-machine
+            hours_to_show: 12
+            points_per_hour: 6
+            line_width: 2.5
+            smoothing: true
+            show:
+              fill: fade
+              legend: true
             entities:
               - entity: sensor.tvattmaskin_power_2
                 name: Tvättmaskin
+                color: "#1e88e5"
               - entity: sensor.torktumlare_power
                 name: Torktumlare
-
-          - type: entities
-            title: Energi (totalt)
-            show_header_toggle: false
-            entities:
-              - entity: sensor.tvattmaskin_energy_2
-                name: Tvättmaskin
+                color: "#e94560"
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Tvättmaskin
+                secondary: "{{ states('sensor.tvattmaskin_power_2')|float(0)|round(0) }} W"
                 icon: mdi:washing-machine
-              - entity: sensor.torktumlare_energy
-                name: Torktumlare
+                icon_color: >-
+                  {% set p = states('sensor.tvattmaskin_power_2')|float(0) %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.tvattmaskin_2
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Torktumlare
+                secondary: "{{ states('sensor.torktumlare_power')|float(0)|round(0) }} W"
                 icon: mdi:tumble-dryer
+                icon_color: >-
+                  {% set p = states('sensor.torktumlare_power')|float(0) %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.torktumlare
+                tap_action:
+                  action: toggle
 
-      # ── VÄRME & VARMVATTEN ──
+      # ── VÄRME & VVB ──
       - type: grid
-        title: "🔥 Värme & VVB"
         cards:
-          - type: custom:apexcharts-card
-            header:
-              show: true
-              title: Värmepumpar
-              show_states: true
-              colorize_states: true
-            graph_span: 12h
-            series:
+          - type: custom:mushroom-title-card
+            title: Värme & VVB
+            subtitle: Värmepumpar & varmvatten
+          - type: custom:mini-graph-card
+            name: Värme
+            icon: mdi:heat-pump
+            hours_to_show: 12
+            points_per_hour: 4
+            line_width: 2.5
+            smoothing: true
+            show:
+              fill: fade
+              legend: true
+            entities:
               - entity: sensor.luftvarmepump_vardagsrum_power
                 name: VP Vardagsrum
-                color: "#FF5722"
+                color: "#ff5722"
               - entity: sensor.luftvarmepump_sovrum_power
                 name: VP Sovrum
-                color: "#E91E63"
+                color: "#e91e63"
               - entity: sensor.vvb_3fas_power
                 name: VVB
-                color: "#FF9800"
-
-          - type: entities
-            title: VVB Detaljer
-            show_header_toggle: false
-            entities:
-              - entity: sensor.vvb_3fas_power
-                name: Effekt (total)
-                icon: mdi:water-boiler
-              - entity: sensor.vvb_phase_a_power
-                name: Fas A
-              - entity: sensor.vvb_phase_b_power
-                name: Fas B
-              - entity: sensor.vvb_phase_c_power
-                name: Fas C
-              - entity: sensor.vvb_3fas_temperature
-                name: Temperatur
-                icon: mdi:thermometer
-              - entity: sensor.vvb_utedel_power
-                name: VVB Utedel
+                color: "#ff9800"
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: VP Vardagsrum
+                secondary: "{{ states('sensor.luftvarmepump_vardagsrum_power')|float(0)|round(0) }} W"
                 icon: mdi:heat-pump
+                icon_color: >-
+                  {% set p = states('sensor.luftvarmepump_vardagsrum_power')|float(0) %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.luftvarmepump_vardagsrum
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: VP Sovrum
+                secondary: "{{ states('sensor.luftvarmepump_sovrum_power')|float(0)|round(0) }} W"
+                icon: mdi:heat-pump
+                icon_color: >-
+                  {% set p = states('sensor.luftvarmepump_sovrum_power')|float(0) %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.luftvarmepump_sovrum
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: VVB
+                secondary: "{{ states('sensor.vvb_3fas_power')|float(0)|round(0) }} W · {{ states('sensor.vvb_3fas_temperature')|float(0)|round(0) }}°C"
+                icon: mdi:water-boiler
+                icon_color: >-
+                  {% set p = states('sensor.vvb_3fas_power')|float(0) %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: sensor.vvb_3fas_power
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: VVB Utedel
+                secondary: "{{ states('sensor.vvb_utedel_power')|float(0)|round(0) }} W"
+                icon: mdi:water-boiler
+                icon_color: >-
+                  {% set p = states('sensor.vvb_utedel_power')|float(0) %}{% if p > 1000 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.vvb_utedel
+                tap_action:
+                  action: toggle
 
-          - type: glance
-            title: Värmepumpar
-            show_name: true
-            show_state: true
-            entities:
-              - entity: sensor.luftvarmepump_vardagsrum_power
-                name: VP Vardagsrum
-              - entity: sensor.luftvarmepump_sovrum_power
-                name: VP Sovrum
-
-      # ── SERVERRUM / IT ──
+      # ── IT & SERVER ──
       - type: grid
-        title: "🖥️ IT & Server"
         cards:
-          - type: custom:apexcharts-card
-            header:
-              show: true
-              title: Serverutrustning
-              show_states: true
-              colorize_states: true
-            graph_span: 6h
-            series:
-              - entity: sensor.proxmox_power
-                name: Proxmox
-                color: "#E65100"
-              - entity: sensor.rack_switch_power
-                name: Rack Switch
-                color: "#1565C0"
-              - entity: sensor.fw_power
-                name: Brandvägg
-                color: "#2E7D32"
-              - entity: sensor.aggregation_switch_power
-                name: Agg. Switch
-                color: "#6A1B9A"
-              - entity: sensor.proxmox_backup_power
-                name: Proxmox Backup
-                color: "#F57F17"
-              - entity: sensor.raspberry_pi_power
-                name: Raspberry Pi
-                color: "#C62828"
-
-          - type: glance
-            title: IT-Utrustning (W)
-            show_name: true
-            show_state: true
+          - type: custom:mushroom-title-card
+            title: IT & Server
+            subtitle: Rack & nätverk
+          - type: custom:mini-graph-card
+            name: Server
+            icon: mdi:server
+            hours_to_show: 12
+            points_per_hour: 4
+            line_width: 2.5
+            smoothing: true
+            show:
+              fill: fade
+              legend: true
             entities:
               - entity: sensor.proxmox_power
                 name: Proxmox
+                color: "#e65100"
               - entity: sensor.rack_switch_power
                 name: Switch
+                color: "#1565c0"
               - entity: sensor.fw_power
-                name: FW
+                name: Brandvägg
+                color: "#2e7d32"
               - entity: sensor.aggregation_switch_power
                 name: Agg
-              - entity: sensor.proxmox_backup_power
-                name: Backup
-              - entity: sensor.raspberry_pi_power
-                name: RPi
+                color: "#6a1b9a"
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Proxmox
+                secondary: "{{ states('sensor.proxmox_power')|float(0)|round(0) }} W"
+                icon: mdi:server
+                icon_color: >-
+                  {% set p = states('sensor.proxmox_power')|float(0) %}{% if p > 300 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% else %}green{% endif %}
+                entity: switch.proxmox
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Proxmox Backup
+                secondary: "{{ states('sensor.proxmox_backup_power')|float(0)|round(0) }} W"
+                icon: mdi:server-network
+                icon_color: >-
+                  {% set p = states('sensor.proxmox_backup_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.proxmox_backup
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Rack Switch
+                secondary: "{{ states('sensor.rack_switch_power')|float(0)|round(0) }} W"
+                icon: mdi:switch
+                icon_color: >-
+                  {% set p = states('sensor.rack_switch_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.rack_switch
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Brandvägg
+                secondary: "{{ states('sensor.fw_power')|float(0)|round(0) }} W"
+                icon: mdi:wall
+                icon_color: >-
+                  {% set p = states('sensor.fw_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.fw
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Agg. Switch
+                secondary: "{{ states('sensor.aggregation_switch_power')|float(0)|round(0) }} W"
+                icon: mdi:lan
+                icon_color: >-
+                  {% set p = states('sensor.aggregation_switch_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.aggregation_switch
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Raspberry Pi
+                secondary: "{{ states('sensor.raspberry_pi_power')|float(0)|round(0) }} W"
+                icon: mdi:raspberry-pi
+                icon_color: >-
+                  {% set p = states('sensor.raspberry_pi_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.raspberry_pi
+                tap_action:
+                  action: toggle
 
-      # ── RUM ──
+      # ── RUM & UTTAG ──
       - type: grid
-        title: "🏠 Rum"
         cards:
-          - type: glance
-            title: Rum Förbrukning (W)
-            show_name: true
-            show_state: true
-            entities:
-              - entity: sensor.leifs_rum_power
-                name: Leifs rum
-              - entity: sensor.shellyplugsg3_d0cf13c9b448_power
-                name: Jespers rum
-              - entity: sensor.jakt_rummet_power
-                name: Jaktrummet
-              - entity: sensor.tvattmaskin_power
-                name: TV
-              - entity: sensor.portabel_ac_power
-                name: Portabel AC
-              - entity: sensor.uttag_hall_power
-                name: Hall
-              - entity: sensor.uttag_soffa_power
-                name: Soffa
-
-          - type: entities
-            title: Total Energi per Rum (kWh)
-            show_header_toggle: false
-            entities:
-              - entity: sensor.leifs_rum_energy
-                name: Leifs rum
+          - type: custom:mushroom-title-card
+            title: Rum & Uttag
+            subtitle: Smarta uttag
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Leifs rum
+                secondary: "{{ states('sensor.leifs_rum_power')|float(0)|round(0) }} W"
                 icon: mdi:desk
-              - entity: sensor.shellyplugsg3_d0cf13c9b448_energy
-                name: Jespers rum
+                icon_color: >-
+                  {% set p = states('sensor.leifs_rum_power')|float(0) %}{% if p > 500 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.leifs_rum
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Jespers rum
+                secondary: "{{ states('sensor.shellyplugsg3_d0cf13c9b448_power')|float(0)|round(0) }} W"
                 icon: mdi:desk
-              - entity: sensor.jakt_rummet_energy
-                name: Jaktrummet
+                icon_color: >-
+                  {% set p = states('sensor.shellyplugsg3_d0cf13c9b448_power')|float(0) %}{% if p > 500 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.shellyplugsg3_d0cf13c9b448
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Jaktrummet
+                secondary: "{{ states('sensor.jakt_rummet_power')|float(0)|round(0) }} W"
                 icon: mdi:pine-tree
-              - entity: sensor.tvattmaskin_energy
-                name: TV
-                icon: mdi:television
-              - entity: sensor.portabel_ac_energy
-                name: Portabel AC
-                icon: mdi:air-conditioner
-              - entity: sensor.kylskap_energy
-                name: Switch kök
+                icon_color: >-
+                  {% set p = states('sensor.jakt_rummet_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.jakt_rummet
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Uttag Hall
+                secondary: "{{ states('sensor.uttag_hall_power')|float(0)|round(0) }} W"
                 icon: mdi:power-socket-eu
+                icon_color: >-
+                  {% set p = states('sensor.uttag_hall_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.uttag_hall
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Uttag Soffa
+                secondary: "{{ states('sensor.uttag_soffa_power')|float(0)|round(0) }} W"
+                icon: mdi:sofa
+                icon_color: >-
+                  {% set p = states('sensor.uttag_soffa_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.uttag_soffa
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Portabel AC
+                secondary: "{{ states('sensor.portabel_ac_power')|float(0)|round(0) }} W"
+                icon: mdi:air-conditioner
+                icon_color: >-
+                  {% set p = states('sensor.portabel_ac_power')|float(0) %}{% if p > 500 %}red{% elif p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.portabel_ac
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Akustikpanel
+                secondary: "{{ states('sensor.akustikpanel_power')|float(0)|round(0) }} W"
+                icon: mdi:speaker
+                icon_color: >-
+                  {% set p = states('sensor.akustikpanel_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: light.akustikpanel
+                tap_action:
+                  action: toggle
+              - type: custom:mushroom-template-card
+                primary: Lumi Plug
+                secondary: "{{ states('sensor.lumi_lumi_plug_maeu01_active_power')|float(0)|round(0) }} W"
+                icon: mdi:power-plug
+                icon_color: >-
+                  {% set p = states('sensor.lumi_lumi_plug_maeu01_active_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 20 %}amber{% elif p > 2 %}green{% else %}grey{% endif %}
+                entity: switch.lumi_lumi_plug_maeu01_switch
+                tap_action:
+                  action: toggle
 
   # ═══════════════════════════════════════════════════════════════
-  # VIEW 4: KLIMAT & SENSORER
+  # 5 · KLIMAT
   # ═══════════════════════════════════════════════════════════════
   - title: Klimat
     path: klimat
     icon: mdi:thermometer
     type: sections
+    max_columns: 4
     sections:
       - type: grid
-        title: "🌡️ Golvvärme"
         cards:
+          - type: custom:mushroom-title-card
+            title: Golvvärme
+            subtitle: Badrum
           - type: thermostat
             entity: climate.termostat_badrum_ov
             name: Badrum ÖV
-
           - type: thermostat
             entity: climate.namron_as_4512738_thermostat
             name: Badrum BV
-
-          - type: entities
-            title: Golvvärme Detaljer
-            show_header_toggle: false
-            entities:
-              - entity: sensor.golvvarme_ov_power
-                name: Effekt ÖV
-                icon: mdi:radiator
-              - entity: sensor.golvvarme_ov_current
-                name: Ström ÖV
-              - entity: sensor.golvvarme_ov_voltage
-                name: Spänning ÖV
-              - entity: sensor.namron_bv_power
-                name: Effekt BV
-                icon: mdi:radiator
-              - entity: sensor.namron_bv_current
-                name: Ström BV
-              - entity: sensor.namron_bv_voltage
-                name: Spänning BV
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Golvvärme ÖV
+                secondary: "{{ states('sensor.golvvarme_ov_power')|float(0)|round(0) }} W"
+                icon: mdi:heating-coil
+                icon_color: >-
+                  {% set p = states('sensor.golvvarme_ov_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 10 %}amber{% else %}grey{% endif %}
+                entity: sensor.golvvarme_ov_power
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Golvvärme BV
+                secondary: "{{ states('sensor.namron_bv_power')|float(0)|round(0) }} W"
+                icon: mdi:heating-coil
+                icon_color: >-
+                  {% set p = states('sensor.namron_bv_power')|float(0) %}{% if p > 100 %}deep-orange{% elif p > 10 %}amber{% else %}grey{% endif %}
+                entity: sensor.namron_bv_power
+                tap_action:
+                  action: more-info
 
       - type: grid
-        title: "📡 Sensorer"
         cards:
-          - type: entities
+          - type: custom:mushroom-title-card
             title: Förråd
-            show_header_toggle: false
+            subtitle: Temperatur & fukt
+          - type: custom:mini-graph-card
+            name: Temperatur förråd
+            icon: mdi:thermometer
+            hours_to_show: 48
+            points_per_hour: 2
+            line_width: 3
+            smoothing: true
+            line_color: "#ff7043"
+            show:
+              fill: fade
+              extrema: true
             entities:
               - entity: sensor.temperatur_forrad_temperature
-                name: Temperatur
-                icon: mdi:thermometer
+          - type: custom:mini-graph-card
+            name: Luftfuktighet förråd
+            icon: mdi:water-percent
+            hours_to_show: 48
+            points_per_hour: 2
+            line_width: 3
+            smoothing: true
+            line_color: "#29b6f6"
+            show:
+              fill: fade
+            entities:
               - entity: sensor.temperatur_forrad_humidity
-                name: Luftfuktighet
-                icon: mdi:water-percent
-              - entity: sensor.temperatur_forrad_battery
-                name: Batteri
-                icon: mdi:battery
+          - type: entities
+            show_header_toggle: false
+            entities:
               - entity: binary_sensor.fukt_sensor_forrad_flood
                 name: Fuktlarm
                 icon: mdi:water-alert
+              - entity: sensor.temperatur_forrad_battery
+                name: Batteri sensor
+                icon: mdi:battery
+              - entity: sensor.fukt_sensor_forrad_battery
+                name: Batteri fuktsensor
+                icon: mdi:battery
 
-          - type: entities
-            title: Aqara Rörelse & Ljus
-            show_header_toggle: false
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Rörelse & Ljus
+            subtitle: Aqara P2
+          - type: custom:mini-graph-card
+            name: Ljusnivå
+            icon: mdi:brightness-5
+            hours_to_show: 24
+            points_per_hour: 4
+            line_width: 3
+            smoothing: true
+            line_color: "#ffd54f"
+            show:
+              fill: fade
             entities:
-              - entity: binary_sensor.aqara_motion_and_light_sensor_p2_occupancy
-                name: Rörelse
-                icon: mdi:motion-sensor
               - entity: sensor.aqara_motion_and_light_sensor_p2_illuminance
-                name: Ljusnivå
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: template
+                entity: binary_sensor.aqara_motion_and_light_sensor_p2_occupancy
+                icon: mdi:motion-sensor
+                icon_color: >-
+                  {% if is_state('binary_sensor.aqara_motion_and_light_sensor_p2_occupancy','on') %}red{% else %}grey{% endif %}
+                content: >-
+                  {% if is_state('binary_sensor.aqara_motion_and_light_sensor_p2_occupancy','on') %}Rörelse{% else %}Tomt{% endif %}
+              - type: template
                 icon: mdi:brightness-5
-              - entity: sensor.aqara_motion_and_light_sensor_p2_battery
-                name: Batteri
+                icon_color: amber
+                content: "{{ states('sensor.aqara_motion_and_light_sensor_p2_illuminance') }} lx"
+              - type: entity
+                entity: sensor.aqara_motion_and_light_sensor_p2_battery
                 icon: mdi:battery
 
   # ═══════════════════════════════════════════════════════════════
-  # VIEW 5: BELYSNING
+  # 6 · BELYSNING
   # ═══════════════════════════════════════════════════════════════
-  - title: Lampor
-    path: lampor
+  - title: Belysning
+    path: belysning
     icon: mdi:lightbulb-group
     type: sections
+    max_columns: 4
     sections:
       - type: grid
-        title: "💡 Belysning"
         cards:
-          - type: entities
-            title: Kök & Allrum
-            show_header_toggle: true
-            entities:
-              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light
-                name: Taklampa 2
-              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_2
-                name: Taklampa 3
-              - entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_3
-                name: Taklampa 1
-              - entity: light.ikea_of_sweden_floalt_panel_ws_60x60_light
-                name: Taklampa Allrum
-              - entity: light.kajplats_e27_ws_globe_1055lm
-                name: Kajplats
-
-          - type: entities
-            title: Sovrum & Hall
-            show_header_toggle: true
-            entities:
-              - entity: light.ikea_of_sweden_gunnarp_panel_round_light_2
-                name: Jesper Taklampa
-              - entity: light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_2
-                name: Framsidan
-              - entity: light.cykelforrad
-                name: Cykelförråd
-              - entity: light.akustikpanel
-                name: Akustikpanel
+          - type: custom:mushroom-title-card
+            title: Vardagsrum & Allrum
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_floalt_panel_ws_60x60_light
+            name: Taklampa Allrum
+            use_light_color: true
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_3
+            name: Taklampa 1
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light
+            name: Taklampa 2
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_2
+            name: Taklampa 3
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.kajplats_e27_ws_globe_1055lm
+            name: Kajplats
+            show_brightness_control: true
+            collapsible_controls: true
 
       - type: grid
-        title: "🔐 Lås & Scener"
         cards:
-          - type: entities
-            title: Dörrlås
-            show_header_toggle: false
-            entities:
-              - entity: lock.dorrlas_nimly
-                name: Dörrlås Nimly
-                icon: mdi:lock
-              - entity: sensor.dorrlas_nimly_battery
-                name: Batteri
-                icon: mdi:battery
-              - entity: sensor.dorrlas_nimly_last_action
-                name: Senaste händelse
-              - entity: sensor.dorrlas_nimly_last_action_source
-                name: Källa
-              - entity: sensor.dorrlas_nimly_last_action_user
-                name: Användare
+          - type: custom:mushroom-title-card
+            title: Sovrum & Hall
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_gunnarp_panel_round_light
+            name: Taklampa Sovrum
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_floalt_panel_ws_30x90_light
+            name: Taklampa Hall
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light
+            name: Sänglampa Leif
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_opal_600lm_light_2
+            name: Sänglampa Ann
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_gunnarp_panel_round_light_2
+            name: Jesper Taklampa
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
 
-          - type: entities
-            title: Scener
-            show_header_toggle: false
-            entities:
-              - entity: scene.framsidan_ligths_on
-                name: Framsidan PÅ
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Kök & Jaktrum
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_3
+            name: Taklampa Köksbord
+            show_brightness_control: true
+            show_color_temp_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e14_ws_470lm_light_4
+            name: Kök Fönsterbänk
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfribulbgu10ws345lm_light
+            name: Jaktrum 1
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfribulbgu10ws345lm_light_2
+            name: Jaktrum 2
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfribulbgu10ws345lm_light_3
+            name: Jaktrum 3
+            show_brightness_control: true
+            collapsible_controls: true
+
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Ute & Övrigt
+          - type: custom:mushroom-light-card
+            entity: light.ikea_of_sweden_tradfri_bulb_e27_ws_opal_1000lm_light_2
+            name: Framsidan
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.baksidan_lampa_altan
+            name: Baksidan Altan
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.cykelforrad
+            name: Cykelförråd
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-light-card
+            entity: light.akustikpanel
+            name: Akustikpanel
+            show_brightness_control: true
+            collapsible_controls: true
+          - type: custom:mushroom-title-card
+            title: ""
+            subtitle: Scener & lås
+          - type: custom:mushroom-lock-card
+            entity: lock.dorrlas_nimly
+            name: Dörrlås Nimly
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Framsida på
                 icon: mdi:lightbulb-on
-              - entity: scene.framsidan_ligths_off
-                name: Framsidan AV
+                icon_color: amber
+                tap_action:
+                  action: call-service
+                  service: scene.turn_on
+                  data:
+                    entity_id: scene.framsidan_ligths_on
+              - type: custom:mushroom-template-card
+                primary: Framsida av
                 icon: mdi:lightbulb-off
+                icon_color: blue-grey
+                tap_action:
+                  action: call-service
+                  service: scene.turn_on
+                  data:
+                    entity_id: scene.framsidan_ligths_off
 
   # ═══════════════════════════════════════════════════════════════
-  # VIEW 6: ENHETER & SYSTEM
+  # 7 · SYSTEM
   # ═══════════════════════════════════════════════════════════════
   - title: System
     path: system
-    icon: mdi:cellphone-link
+    icon: mdi:cog
     type: sections
+    max_columns: 4
     sections:
       - type: grid
-        title: "📱 Mobila Enheter"
         cards:
-          - type: glance
-            title: Batteristatus
-            show_name: true
-            show_state: true
-            entities:
-              - entity: sensor.iphone_battery_level
-                name: iPhone (Leif)
-              - entity: sensor.pixel_9_pro_xl_battery_level
-                name: Pixel 9 Pro XL
-              - entity: sensor.pixel_10_pro_xl_battery_level
-                name: Pixel 10 Pro XL
-              - entity: sensor.anns_iphone_battery_level
-                name: Ann's iPhone
-              - entity: sensor.ipad_battery_level
-                name: iPad
+          - type: custom:mushroom-title-card
+            title: Enheter
+            subtitle: Batterinivåer
+          - type: grid
+            columns: 2
+            square: false
+            cards:
+              - type: custom:mushroom-template-card
+                primary: iPhone (Leif)
+                secondary: "{{ states('sensor.iphone_battery_level') }}%"
+                icon: mdi:cellphone
+                icon_color: >-
+                  {% set b = states('sensor.iphone_battery_level')|float(0) %}{% if b < 20 %}red{% elif b < 40 %}orange{% else %}green{% endif %}
+                entity: sensor.iphone_battery_level
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: iPad
+                secondary: "{{ states('sensor.ipad_battery_level') }}%"
+                icon: mdi:tablet
+                icon_color: >-
+                  {% set b = states('sensor.ipad_battery_level')|float(0) %}{% if b < 20 %}red{% elif b < 40 %}orange{% else %}green{% endif %}
+                entity: sensor.ipad_battery_level
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Pixel 9 Pro XL
+                secondary: "{{ states('sensor.pixel_9_pro_xl_battery_level') }}%"
+                icon: mdi:cellphone
+                icon_color: >-
+                  {% set b = states('sensor.pixel_9_pro_xl_battery_level')|float(0) %}{% if b < 20 %}red{% elif b < 40 %}orange{% else %}green{% endif %}
+                entity: sensor.pixel_9_pro_xl_battery_level
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Pixel 10 Pro XL
+                secondary: "{{ states('sensor.pixel_10_pro_xl_battery_level') }}%"
+                icon: mdi:cellphone
+                icon_color: >-
+                  {% set b = states('sensor.pixel_10_pro_xl_battery_level')|float(0) %}{% if b < 20 %}red{% elif b < 40 %}orange{% else %}green{% endif %}
+                entity: sensor.pixel_10_pro_xl_battery_level
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Ann's iPhone
+                secondary: "{{ states('sensor.anns_iphone_battery_level') }}%"
+                icon: mdi:cellphone
+                icon_color: >-
+                  {% set b = states('sensor.anns_iphone_battery_level')|float(0) %}{% if b < 20 %}red{% elif b < 40 %}orange{% else %}green{% endif %}
+                entity: sensor.anns_iphone_battery_level
+                tap_action:
+                  action: more-info
+              - type: custom:mushroom-template-card
+                primary: Lenovo Tab
+                secondary: "{{ states('sensor.lenovo_tab_battery') }}%"
+                icon: mdi:tablet-dashboard
+                icon_color: >-
+                  {% set b = states('sensor.lenovo_tab_battery')|float(0) %}{% if b < 20 %}red{% elif b < 40 %}orange{% else %}green{% endif %}
+                entity: sensor.lenovo_tab_battery
+                tap_action:
+                  action: more-info
 
       - type: grid
-        title: "🖥️ Lenovo Kiosk"
         cards:
-          - type: entities
-            title: Lenovo Tab
-            show_header_toggle: false
-            entities:
-              - entity: sensor.lenovo_tab_battery
-                name: Batteri
-                icon: mdi:battery
-              - entity: binary_sensor.lenovo_tab_plugged_in
-                name: Inkopplad
-                icon: mdi:power-plug
-              - entity: sensor.lenovo_tab_screen_orientation
-                name: Orientering
-              - entity: switch.lenovo_tab_screen
-                name: Skärm
+          - type: custom:mushroom-title-card
+            title: Media
+            subtitle: Devialet Phantom
+          - type: custom:mushroom-media-player-card
+            entity: media_player.phantom_108_db_2
+            name: Phantom 108 dB
+            use_media_info: true
+            show_volume_level: true
+            media_controls:
+              - play_pause_stop
+              - previous
+              - next
+            volume_controls:
+              - volume_buttons
+              - volume_set
 
       - type: grid
-        title: "🌐 Zigbee & System"
         cards:
+          - type: custom:mushroom-title-card
+            title: Zigbee
+            subtitle: Koordinatorer
           - type: entities
-            title: Zigbee Koordinatorer
             show_header_toggle: false
             entities:
-              - entity: sensor.zibbee_cordinator_slzb_06p10_core_chip_temp
-                name: SLZB-06P10 CPU Temp
-                icon: mdi:thermometer
               - entity: sensor.zibbee_cordinator_slzb_06p10_zigbee_chip_temp
-                name: SLZB-06P10 Zigbee Temp
+                name: SLZB-06P10 Zigbee
+                icon: mdi:thermometer
+              - entity: sensor.zibbee_cordinator_slzb_06p10_core_chip_temp
+                name: SLZB-06P10 CPU
+                icon: mdi:thermometer
+              - entity: binary_sensor.zibbee_cordinator_slzb_06p10_internet
+                name: SLZB-06P10 Internet
+                icon: mdi:web
+              - type: divider
+              - entity: sensor.slzb_06mg26u_zigbee_chip_temp
+                name: SLZB-06MG26U Zigbee
                 icon: mdi:thermometer
               - entity: sensor.slzb_06mg26u_core_chip_temp
-                name: SLZB-06MG26U CPU Temp
+                name: SLZB-06MG26U CPU
                 icon: mdi:thermometer
-              - entity: sensor.slzb_06mg26u_zigbee_chip_temp
-                name: SLZB-06MG26U Zigbee Temp
-                icon: mdi:thermometer
+              - entity: binary_sensor.slzb_06mg26u_internet
+                name: SLZB-06MG26U Internet
+                icon: mdi:web
 
+      - type: grid
+        cards:
+          - type: custom:mushroom-title-card
+            title: Anläggning
+            subtitle: Sigenergy & sol
           - type: entities
-            title: Sigenergy Inverter
             show_header_toggle: false
             entities:
               - entity: sensor.sigen_inverter_model_type
                 name: Modell
-                icon: mdi:information
+                icon: mdi:information-outline
               - entity: sensor.sigen_inverter_firmware_version
                 name: Firmware
                 icon: mdi:chip
@@ -706,16 +1362,9 @@ views:
                 name: Driftstatus
                 icon: mdi:play-circle
               - entity: sensor.sigen_inverter_pcs_internal_temperature
-                name: Intern temperatur
+                name: Inverter temp
                 icon: mdi:thermometer
-              - entity: sensor.sigen_plant_plant_running_state
-                name: Anläggningsstatus
-                icon: mdi:factory
-
-          - type: entities
-            title: Sol & Miljö
-            show_header_toggle: false
-            entities:
+              - type: divider
               - entity: sun.sun
                 name: Sol
               - entity: sensor.sun_next_rising
