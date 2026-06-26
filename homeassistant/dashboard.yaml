@@ -342,7 +342,7 @@ views:
             graph_span: 24h
             span:
               start: day
-            chart_type: area
+            chart_type: line
             apex_config:
               chart:
                 height: 240
@@ -379,12 +379,15 @@ views:
             series:
               - entity: sensor.sigen_inverter_pv1_power
                 name: Sträng 1
+                type: area
                 color: "#ffd54f"
               - entity: sensor.sigen_inverter_pv2_power
                 name: Sträng 2
+                type: area
                 color: "#ffb300"
               - entity: sensor.sigen_inverter_pv3_power
                 name: Sträng 3
+                type: area
                 color: "#fb8c00"
           - type: grid
             columns: 2
