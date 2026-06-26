@@ -877,9 +877,10 @@ views:
                   style:
                     colors: "#9aa0a6"
             series:
-              - entity: sensor.nord_pool_se3_current_price
+              - entity: sensor.nord_pool_se3_prices
                 name: Spotpris
                 type: column
+                float_precision: 2
                 color_threshold:
                   - value: 0
                     color: "#43a047"
@@ -890,25 +891,37 @@ views:
                   - value: 1.3
                     color: "#e53935"
                 data_generator: |
-                  let src = null;
-                  for (const id in hass.states) {
-                    if (id.indexOf('nord_pool') !== -1 || id.indexOf('nordpool') !== -1) {
-                      const a = hass.states[id].attributes || {};
-                      if (a.raw_today && a.raw_today.length) { src = a; break; }
-                    }
-                  }
-                  if (!src) return [];
-                  const arr = [].concat(src.raw_today || [], src.raw_tomorrow || []);
-                  return arr
-                    .map(p => [new Date(p.start || p.time || p.from).getTime(),
-                               (p.value != null ? p.value : p.price)])
-                    .filter(x => x[1] != null);
-              - entity: sensor.total_electricity_price
-                name: Totalt (faktiskt)
+                  try {
+                    const rows = (entity.attributes && entity.attributes.data) || [];
+                    return rows.map((p, i) => {
+                      let ts = p.start || p.from || p.time || p.datetime || p.hour;
+                      let t = ts ? new Date(ts).getTime() : null;
+                      if (t == null) { const d = new Date(); d.setHours(0,0,0,0); t = d.getTime() + i*15*60000; }
+                      let v = null;
+                      for (const k of ['price','value','total','cost','amount']) { if (p[k] != null) { v = p[k]; break; } }
+                      if (v == null) { for (const k in p) { if (['start','end','from','to'].indexOf(k) === -1 && typeof p[k] === 'number') { v = p[k]; break; } } }
+                      return [t, v];
+                    }).filter(x => x[1] != null);
+                  } catch (e) { return []; }
+              - entity: sensor.nord_pool_se3_total_prices
+                name: Totalt
                 type: line
+                float_precision: 2
                 color: "#ffffff"
                 stroke_width: 2
-                opacity: 0.6
+                data_generator: |
+                  try {
+                    const rows = (entity.attributes && entity.attributes.data) || [];
+                    return rows.map((p, i) => {
+                      let ts = p.start || p.from || p.time || p.datetime || p.hour;
+                      let t = ts ? new Date(ts).getTime() : null;
+                      if (t == null) { const d = new Date(); d.setHours(0,0,0,0); t = d.getTime() + i*15*60000; }
+                      let v = null;
+                      for (const k of ['price','value','total','cost','amount']) { if (p[k] != null) { v = p[k]; break; } }
+                      if (v == null) { for (const k in p) { if (['start','end','from','to'].indexOf(k) === -1 && typeof p[k] === 'number') { v = p[k]; break; } } }
+                      return [t, v];
+                    }).filter(x => x[1] != null);
+                  } catch (e) { return []; }
           - type: entities
             title: Priskomponenter
             show_header_toggle: false
