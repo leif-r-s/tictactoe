@@ -844,7 +844,6 @@ views:
             graph_span: 48h
             span:
               start: day
-            extend_to: false
             now:
               show: true
               label: Nu
