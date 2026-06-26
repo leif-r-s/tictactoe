@@ -823,25 +823,37 @@ views:
                 icon: mdi:cash
                 icon_color: orange
                 content: "Nu {{ states('sensor.nord_pool_se3_current_price') }}"
+                entity: sensor.nord_pool_se3_current_price
+                tap_action:
+                  action: more-info
               - type: template
                 icon: mdi:arrow-down-bold
                 icon_color: green
                 content: "Lägst {{ states('sensor.nord_pool_se3_lowest_price') }}"
+                entity: sensor.nord_pool_se3_lowest_price
+                tap_action:
+                  action: more-info
               - type: template
                 icon: mdi:arrow-up-bold
                 icon_color: red
                 content: "Högst {{ states('sensor.nord_pool_se3_highest_price') }}"
+                entity: sensor.nord_pool_se3_highest_price
+                tap_action:
+                  action: more-info
               - type: template
                 icon: mdi:clock-fast
                 icon_color: blue
                 content: "Nästa {{ states('sensor.nord_pool_se3_next_price') }}"
+                entity: sensor.nord_pool_se3_next_price
+                tap_action:
+                  action: more-info
           - type: custom:apexcharts-card
             header:
               show: true
               title: Elpris idag
               show_states: true
               colorize_states: true
-            graph_span: 48h
+            graph_span: 24h
             span:
               start: day
             now:
